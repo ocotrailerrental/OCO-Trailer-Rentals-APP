@@ -26,8 +26,8 @@ import {
   ClipboardList,
   LogOut,
   PanelLeft,
-  Truck,
 } from 'lucide-react'
+import { OcoMark } from '@/components/OcoLogo'
 import { cn } from '@/lib/utils'
 
 const SIDEBAR_KEY = 'sidebar_collapsed'
@@ -151,9 +151,7 @@ export function AppSidebarShell() {
         >
           {!collapsed && (
             <>
-              <div className="flex items-center justify-center h-7 w-7 rounded-md bg-primary text-primary-foreground shrink-0">
-                <Truck className="h-4 w-4" />
-              </div>
+              <OcoMark className="h-7 w-7 shrink-0" />
               <span className="flex-1 font-semibold text-sm truncate">OCO Trailer Rentals</span>
             </>
           )}

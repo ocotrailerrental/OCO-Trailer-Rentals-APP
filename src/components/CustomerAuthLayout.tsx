@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
-import { Truck } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { OcoLockup } from '@/components/OcoLogo'
 
 export function CustomerAuthLayout({
   title,
@@ -15,16 +15,8 @@ export function CustomerAuthLayout({
   return (
     <main className="flex min-h-dvh items-center justify-center bg-sidebar px-5 py-12 text-sidebar-foreground">
       <div className="w-full max-w-md">
-        <Link to="/" className="mx-auto mb-8 flex w-fit items-center gap-3 text-sidebar-foreground">
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-md">
-            <Truck className="h-5 w-5" />
-          </span>
-          <span>
-            <strong className="block text-sm tracking-[0.18em]">OCO</strong>
-            <span className="block text-[10px] uppercase tracking-[0.2em] text-sidebar-foreground/65">
-              Trailer Rentals LLC
-            </span>
-          </span>
+        <Link to="/" className="mx-auto mb-8 flex w-fit text-sidebar-foreground" aria-label="OCO Trailer Rentals — home">
+          <OcoLockup />
         </Link>
         <Card className="border-sidebar-foreground/10 bg-card text-card-foreground shadow-lg">
           <CardHeader className="space-y-2 px-6 pb-2 pt-6">
