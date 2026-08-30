@@ -40,7 +40,7 @@ export const Route = createRootRoute({
       { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
       { title: 'OCO Trailer Rentals · Haul More. Go Further.' },
       { name: 'description', content: 'Car hauler trailer rentals in Omaha, Nebraska and Anchorage, Alaska. Transparent rates, maintained equipment, straightforward pickup.' },
-      { name: 'theme-color', content: '#322b23' },
+      { name: 'theme-color', content: '#16272F' },
       { property: 'og:type', content: 'website' },
       { property: 'og:title', content: 'OCO Trailer Rentals' },
       { property: 'og:description', content: 'Car hauler trailer rentals in Omaha, Nebraska and Anchorage, Alaska. Transparent rates, maintained equipment, straightforward pickup.' },
@@ -131,8 +131,8 @@ function ConfigurationNotice({ detail }: { detail: string }) {
         justifyContent: 'center',
         padding: '2rem 1.25rem',
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        background: '#f6f2ea',
-        color: '#241f19',
+        background: '#F1F4F5',
+        color: '#16272F',
       }}
     >
       <div style={{ maxWidth: '32rem' }}>
@@ -142,7 +142,7 @@ function ConfigurationNotice({ detail }: { detail: string }) {
             fontSize: '0.72rem',
             letterSpacing: '0.16em',
             textTransform: 'uppercase',
-            color: '#b8622a',
+            color: '#486C7B',
             fontWeight: 700,
           }}
         >
@@ -151,7 +151,7 @@ function ConfigurationNotice({ detail }: { detail: string }) {
         <h1 style={{ fontSize: '1.6rem', margin: '0.75rem 0 0', lineHeight: 1.25 }}>
           This deployment is not connected to its database yet
         </h1>
-        <p style={{ lineHeight: 1.6, color: '#574f45' }}>
+        <p style={{ lineHeight: 1.6, color: '#4A5A63' }}>
           The app built and deployed correctly, but it has not been told where the
           OCO database lives, so it cannot load locations, trailers, or reservations.
           Nothing is broken in the code and no data is affected.
@@ -160,15 +160,15 @@ function ConfigurationNotice({ detail }: { detail: string }) {
           style={{
             fontFamily: 'ui-monospace, monospace',
             fontSize: '0.85rem',
-            background: '#efe9de',
+            background: '#E2E8EA',
             padding: '0.7rem 0.85rem',
             borderRadius: '4px',
-            borderLeft: '2px solid #b8622a',
+            borderLeft: '2px solid #486C7B',
           }}
         >
           {detail}
         </p>
-        <p style={{ lineHeight: 1.6, color: '#574f45' }}>
+        <p style={{ lineHeight: 1.6, color: '#4A5A63' }}>
           Add both values in Vercel under <strong>Project Settings → Environment
           Variables</strong>, then redeploy. They are listed in <code>.env.example</code>
           {' '}in the repository.

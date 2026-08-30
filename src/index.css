@@ -3,96 +3,98 @@
 @import "tw-animate-css";
 @custom-variant dark (&:is(.dark *));
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   THE ONLY design-tokens file. This single file owns the whole app's visual
-   identity — colors, radius, fonts, shadows, light + dark. To re-theme the app
-   (e.g. "make it a Supabase theme"), edit the token VALUES in :root and .dark
-   below. Nothing else. No second config file, no component edits, no library
-   theme layer. Values are oklch(); the @theme inline block maps them to Tailwind
-   utilities (bg-primary, text-foreground, border-border, …) in this same file.
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* Design tokens — the ONLY place the app's visual identity is defined.
+   Re-theme the whole app by editing the values in :root (+ .dark). No other file.
 
-/* ── Design tokens — the ONLY place the app's visual identity is defined.
-   Re-theme the whole app by editing the values in :root (+ .dark). No other file. ── */
+   The palette is sampled directly from the OCO Trailer Rentals logo:
+     deep ink / ring   #16272F  -> oklch(0.262 0.027 229)   the badge outline and wordmark
+     steel blue        #486C7B  -> oklch(0.510 0.047 226)   the circle behind the trailer
+     steel light       #6B96A5  -> oklch(0.647 0.052 222)   the highlight on that circle
+     white             #FFFFFF                              the trailer and lettering
+
+   The logo's blue is deliberately muted. Interactive elements carry slightly more
+   chroma than the raw sample so buttons and links read as interactive rather than
+   grey, but everything stays on the same hue family (~226) so the app and the sign
+   on the wall look like the same company. */
 :root {
-  --background: oklch(0.965 0.012 80);
-  --foreground: oklch(0.19 0.018 70);
-  --card: oklch(0.985 0.008 80);
-  --card-foreground: oklch(0.19 0.018 70);
-  --popover: oklch(0.985 0.008 80);
-  --popover-foreground: oklch(0.19 0.018 70);
-  --primary: oklch(0.61 0.17 48);
-  --primary-foreground: oklch(0.98 0.008 80);
-  --secondary: oklch(0.89 0.018 80);
-  --secondary-foreground: oklch(0.24 0.02 65);
-  --muted: oklch(0.91 0.014 80);
-  --muted-foreground: oklch(0.46 0.025 65);
-  --accent: oklch(0.68 0.16 48);
-  --accent-foreground: oklch(0.18 0.018 65);
-  --destructive: oklch(0.56 0.18 28);
-  --destructive-foreground: oklch(0.98 0.008 80);
-  --border: oklch(0.83 0.022 75);
-  --input: oklch(0.83 0.022 75);
-  --ring: oklch(0.61 0.17 48);
-  --chart-1: oklch(0.61 0.17 48);
-  --chart-2: oklch(0.35 0.04 65);
-  --chart-3: oklch(0.76 0.11 82);
-  --chart-4: oklch(0.49 0.09 40);
-  --chart-5: oklch(0.64 0.06 100);
-  --sidebar: oklch(0.23 0.018 65);
-  --sidebar-foreground: oklch(0.95 0.012 80);
-  --sidebar-primary: oklch(0.68 0.16 48);
-  --sidebar-primary-foreground: oklch(0.18 0.018 65);
-  --sidebar-accent: oklch(0.31 0.025 65);
-  --sidebar-accent-foreground: oklch(0.95 0.012 80);
-  --sidebar-border: oklch(0.35 0.028 65);
-  --sidebar-ring: oklch(0.68 0.16 48);
+  --background: oklch(0.976 0.004 228);
+  --foreground: oklch(0.245 0.026 229);
+  --card: oklch(0.995 0.002 228);
+  --card-foreground: oklch(0.245 0.026 229);
+  --popover: oklch(0.995 0.002 228);
+  --popover-foreground: oklch(0.245 0.026 229);
+  --primary: oklch(0.500 0.075 227);
+  --primary-foreground: oklch(0.985 0.003 228);
+  --secondary: oklch(0.928 0.009 228);
+  --secondary-foreground: oklch(0.285 0.026 229);
+  --muted: oklch(0.945 0.006 228);
+  --muted-foreground: oklch(0.500 0.019 228);
+  --accent: oklch(0.620 0.066 224);
+  --accent-foreground: oklch(0.205 0.026 229);
+  --destructive: oklch(0.552 0.166 25);
+  --destructive-foreground: oklch(0.985 0.003 228);
+  --border: oklch(0.878 0.011 228);
+  --input: oklch(0.878 0.011 228);
+  --ring: oklch(0.500 0.075 227);
+  --chart-1: oklch(0.500 0.075 227);
+  --chart-2: oklch(0.647 0.052 222);
+  --chart-3: oklch(0.360 0.038 231);
+  --chart-4: oklch(0.735 0.040 219);
+  --chart-5: oklch(0.262 0.027 229);
+  --sidebar: oklch(0.262 0.027 229);
+  --sidebar-foreground: oklch(0.960 0.005 228);
+  --sidebar-primary: oklch(0.660 0.075 223);
+  --sidebar-primary-foreground: oklch(0.195 0.024 230);
+  --sidebar-accent: oklch(0.335 0.030 229);
+  --sidebar-accent-foreground: oklch(0.960 0.005 228);
+  --sidebar-border: oklch(0.375 0.029 229);
+  --sidebar-ring: oklch(0.660 0.075 223);
 
   --radius: 0.7rem;
   --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   --font-serif: 'Lora', ui-serif, Georgia, serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
-  --shadow-sm: 0 2px 6px oklch(0.2 0.02 65 / 0.08);
-  --shadow-md: 0 12px 30px oklch(0.2 0.02 65 / 0.12);
-  --shadow-lg: 0 24px 60px oklch(0.2 0.02 65 / 0.22);
+  --shadow-sm: 0 2px 6px oklch(0.22 0.025 229 / 0.09);
+  --shadow-md: 0 12px 30px oklch(0.22 0.025 229 / 0.13);
+  --shadow-lg: 0 24px 60px oklch(0.18 0.024 230 / 0.24);
 }
 
 .dark {
-  --background: oklch(0.19 0.018 65);
-  --foreground: oklch(0.94 0.012 80);
-  --card: oklch(0.24 0.022 65);
-  --card-foreground: oklch(0.94 0.012 80);
-  --popover: oklch(0.24 0.022 65);
-  --popover-foreground: oklch(0.94 0.012 80);
-  --primary: oklch(0.72 0.16 52);
-  --primary-foreground: oklch(0.19 0.018 65);
-  --secondary: oklch(0.31 0.025 65);
-  --secondary-foreground: oklch(0.88 0.015 80);
-  --muted: oklch(0.28 0.022 65);
-  --muted-foreground: oklch(0.72 0.018 75);
-  --accent: oklch(0.35 0.035 65);
-  --accent-foreground: oklch(0.95 0.012 80);
-  --destructive: oklch(0.63 0.18 28);
-  --destructive-foreground: oklch(0.96 0.01 80);
-  --border: oklch(0.38 0.028 65);
-  --input: oklch(0.38 0.028 65);
-  --ring: oklch(0.72 0.16 52);
-  --chart-1: oklch(0.72 0.16 52);
-  --chart-2: oklch(0.62 0.08 80);
-  --chart-3: oklch(0.78 0.12 95);
-  --chart-4: oklch(0.54 0.1 42);
-  --chart-5: oklch(0.7 0.06 100);
-  --sidebar: oklch(0.15 0.015 65);
-  --sidebar-foreground: oklch(0.94 0.012 80);
-  --sidebar-primary: oklch(0.72 0.16 52);
-  --sidebar-primary-foreground: oklch(0.19 0.018 65);
-  --sidebar-accent: oklch(0.25 0.022 65);
-  --sidebar-accent-foreground: oklch(0.94 0.012 80);
-  --sidebar-border: oklch(0.3 0.025 65);
-  --sidebar-ring: oklch(0.72 0.16 52);
+  --background: oklch(0.205 0.023 229);
+  --foreground: oklch(0.950 0.006 228);
+  --card: oklch(0.255 0.026 229);
+  --card-foreground: oklch(0.950 0.006 228);
+  --popover: oklch(0.255 0.026 229);
+  --popover-foreground: oklch(0.950 0.006 228);
+  --primary: oklch(0.690 0.083 223);
+  --primary-foreground: oklch(0.185 0.023 230);
+  --secondary: oklch(0.325 0.029 229);
+  --secondary-foreground: oklch(0.900 0.008 228);
+  --muted: oklch(0.295 0.026 229);
+  --muted-foreground: oklch(0.735 0.017 226);
+  --accent: oklch(0.360 0.035 229);
+  --accent-foreground: oklch(0.955 0.006 228);
+  --destructive: oklch(0.638 0.163 25);
+  --destructive-foreground: oklch(0.965 0.005 228);
+  --border: oklch(0.390 0.030 229);
+  --input: oklch(0.390 0.030 229);
+  --ring: oklch(0.690 0.083 223);
+  --chart-1: oklch(0.690 0.083 223);
+  --chart-2: oklch(0.560 0.055 226);
+  --chart-3: oklch(0.790 0.045 219);
+  --chart-4: oklch(0.440 0.045 230);
+  --chart-5: oklch(0.870 0.028 221);
+  --sidebar: oklch(0.165 0.021 231);
+  --sidebar-foreground: oklch(0.950 0.006 228);
+  --sidebar-primary: oklch(0.690 0.083 223);
+  --sidebar-primary-foreground: oklch(0.185 0.023 230);
+  --sidebar-accent: oklch(0.265 0.026 229);
+  --sidebar-accent-foreground: oklch(0.950 0.006 228);
+  --sidebar-border: oklch(0.315 0.028 229);
+  --sidebar-ring: oklch(0.690 0.083 223);
 }
 
-/* ── Token → utility mapping (Tailwind v4). Same file as the values above. ── */
+/* Token to utility mapping (Tailwind v4). Same file as the values above. */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -142,14 +144,15 @@
 @layer base {
   * { border-color: var(--color-border); }
 
-  /* Full viewport chain so AppShell / Sidebar h-full + flex-1 work */
   html { height: 100%; }
+
   #root {
     min-height: 100%;
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
   }
+
   body {
     min-height: 100%;
     min-height: 100dvh;
@@ -163,6 +166,7 @@
 
 @layer utilities {
   .animate-fade-in { animation: fade-in 0.3s ease-in-out; }
+
   @keyframes fade-in {
     from { opacity: 0; transform: translateY(10px); }
     to   { opacity: 1; transform: translateY(0); }
