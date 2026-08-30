@@ -86,18 +86,35 @@ export function addDays(date: string, days: number) {
   return localDateString(value)
 }
 
+/**
+ * Billable rental days, counted INCLUSIVELY — the pickup day and the return day
+ * are both charged. 25 Aug → 1 Sep is 8 days, not 7.
+ *
+ * This MUST agree with `oco_create_reservation` in Supabase, which computes
+ * `(p_end_date - p_start_date) + 1`. The database decides what the customer is
+ * actually charged; this function exists only so the on-screen quote matches it.
+ * Change one without the other and the app quotes a price it does not charge.
+ */
 export function rentalDays(startDate: string, endDate: string) {
   const start = Date.parse(`${startDate}T00:00:00Z`)
   const end = Date.parse(`${endDate}T00:00:00Z`)
-  return Math.max(0, Math.round((end - start) / 86_400_000))
+  if (Number.isNaN(start) || Number.isNaN(end) || end < start) return 0
+  return Math.round((end - start) / 86_400_000) + 1
 }
 
+/**
+ * Mirrors the rate ladder in `oco_create_reservation`: whole 30-day periods at the
+ * monthly rate first, then whole 7-day periods at the weekly rate, then the
+ * remaining days at the daily rate. Delivery is $0.50/mile — still hard-coded here
+ * and in SQL; Phase 2 moves it into the locations table.
+ */
 export function rentalEstimate(days: number, trailer: Pick<Trailer, 'daily_rate' | 'weekly_rate' | 'monthly_rate' | 'security_deposit'>, deliveryMiles = 0) {
-  const months = Math.floor(days / 30)
-  const weeks = Math.floor((days - months * 30) / 7)
-  const remainingDays = days - months * 30 - weeks * 7
+  const billableDays = Math.max(0, days)
+  const months = Math.floor(billableDays / 30)
+  const weeks = Math.floor((billableDays - months * 30) / 7)
+  const remainingDays = billableDays - months * 30 - weeks * 7
   const rentalSubtotal = months * Number(trailer.monthly_rate) + weeks * Number(trailer.weekly_rate) + remainingDays * Number(trailer.daily_rate)
-  const deliveryFee = Math.max(0, deliveryMiles) * 0.5
+  const deliveryFee = Math.round(Math.max(0, deliveryMiles) * 0.5 * 100) / 100
   return {
     months,
     weeks,

@@ -3,7 +3,7 @@ import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { BlinkClientBoundary } from '@/components/BlinkClientBoundary'
+import { ClientOnlyBoundary } from '@/components/ClientOnlyBoundary'
 import { AuthLoading, CustomerAuthLayout } from '@/components/CustomerAuthLayout'
 import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { supabase } from '@/lib/supabase'
@@ -14,7 +14,7 @@ export const Route = createFileRoute('/reset-password')({
 })
 
 function ResetPasswordRoute() {
-  return <BlinkClientBoundary fallback={<AuthLoading label="Preparing password reset…" />}><ResetPasswordForm /></BlinkClientBoundary>
+  return <ClientOnlyBoundary fallback={<AuthLoading label="Preparing password reset…" />}><ResetPasswordForm /></ClientOnlyBoundary>
 }
 
 function ResetPasswordForm() {

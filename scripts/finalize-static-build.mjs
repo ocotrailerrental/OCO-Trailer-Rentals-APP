@@ -1,20 +1,18 @@
 /**
- * Flatten the TanStack Start build into a static `dist/` that Blink hosting serves.
+ * Flatten the TanStack Start build into a static `dist/` for deployment.
  *
- * TanStack Start's `vite build` (configured with `build.outDir: '.vite-out'`)
- * emits:
- *   .vite-out/client/   ← prerendered HTML + assets (what we want, STATIC)
- *   .vite-out/server/   ← SSR Nitro server (NOT used by Blink's static S3 hosting)
+ * `vite build` (with `build.outDir: '.vite-out'`) emits:
+ *   .vite-out/client/   <- prerendered HTML + assets (what we want, static)
+ *   .vite-out/server/   <- SSR server bundle (unused by static hosting)
  *
- * Blink uploads `dist/` and serves `dist/index.html` (see src/constants/publish.ts
- * BUILD_PATHS['vite-react'] = 'dist'). So we copy `.vite-out/client/*` up into a
- * flat `dist/` and drop the server.
+ * Vercel serves `dist/`, so this copies `.vite-out/client/*` up into a flat
+ * `dist/` and drops the server build.
  *
- * Why build into `.vite-out` instead of `dist/` directly: the platform pre-injects
- * `dist/.../​_redirects` (the SPA fallback) owned by another user, and Start's client
- * build tries to EMPTY its out dir first → `EACCES: unlink _redirects`. Building into
- * a clean temp dir avoids that entirely; here we only COPY into `dist/` (never delete),
- * so a pre-existing read-only `_redirects` is tolerated.
+ * Why build into `.vite-out` rather than `dist/` directly: some hosts pre-inject
+ * a read-only `dist/_redirects`, and Start's client build empties its out dir
+ * first, which fails with EACCES. Building into a clean temp dir sidesteps that;
+ * here we only COPY into `dist/` and never delete, so a pre-existing read-only
+ * `_redirects` is tolerated.
  */
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
@@ -33,7 +31,7 @@ for (const entry of readdirSync(SRC)) {
   try {
     cpSync(join(SRC, entry), join(DEST, entry), { recursive: true, force: true })
   } catch (e) {
-    // ONLY the platform-pre-injected `_redirects` may be skipped: it's read-only,
+    // ONLY a host-pre-injected `_redirects` may be skipped: it's read-only,
     // already in dist/, and byte-identical to ours. ANY other failed entry (assets/,
     // index.html, route html) would leave dist/index.html pointing at missing or
     // stale hashed assets — a silently broken deployment. Fail the build instead.

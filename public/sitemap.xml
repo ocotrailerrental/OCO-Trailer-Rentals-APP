@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Starter sitemap — served as a real static file (not the SPA shell).
-  The seo-aeo skill expands this to list every indexable route and rewrites
-  <loc> to absolute URLs on the deployed domain, e.g. https://your-domain/.
+  Public, indexable routes only. Account and booking-flow pages are excluded here
+  and disallowed in robots.txt. Rewrite <loc> to absolute URLs once a domain is
+  pointed at the app.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>/book</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
   </url>
 </urlset>

@@ -19,6 +19,5 @@
     "hooks": "@/hooks"
   },
   "registries": {
-    "@blink": "https://blink-ui-registry.kai-96c.workers.dev/r/{name}.json"
   }
 }

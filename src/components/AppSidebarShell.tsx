@@ -26,10 +26,24 @@ import {
   ClipboardList,
   LogOut,
   PanelLeft,
+  Truck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const SIDEBAR_KEY = 'sidebar_collapsed'
+
+/** Initials for the avatar: two from the name, else the email's first letter. */
+function initialsFor(name: string, email: string) {
+  const fromName = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0]?.toUpperCase() ?? '')
+    .join('')
+  if (fromName) return fromName
+  return email.trim()[0]?.toUpperCase() ?? '·'
+}
 
 interface NavItemDef {
   href: string
@@ -87,6 +101,30 @@ export function AppSidebarShell() {
     if (localStorage.getItem(SIDEBAR_KEY) === 'true') setCollapsed(true)
   }, [])
 
+  // The signed-in customer. This used to be hard-coded to "User · user@example.com",
+  // which shipped placeholder text into a live account page.
+  const [account, setAccount] = useState<{ name: string; email: string } | null>(null)
+  useEffect(() => {
+    let active = true
+    void (async () => {
+      const { data, error } = await supabase.auth.getUser()
+      if (!active || error || !data.user) return
+      const email = data.user.email ?? ''
+      const { data: profile } = await supabase
+        .from('oco_profiles')
+        .select('full_name')
+        .eq('id', data.user.id)
+        .maybeSingle()
+      if (!active) return
+      setAccount({ name: profile?.full_name?.trim() || '', email })
+    })()
+    return () => { active = false }
+  }, [])
+
+  const displayName = account?.name || (account?.email ? account.email.split('@')[0] : 'Your account')
+  const displayEmail = account?.email || 'Loading…'
+  const initials = account ? initialsFor(account.name, account.email) : '·'
+
   const toggle = useCallback(() => {
     setCollapsed(v => {
       const next = !v
@@ -113,8 +151,8 @@ export function AppSidebarShell() {
         >
           {!collapsed && (
             <>
-              <div className="flex items-center justify-center h-7 w-7 rounded-md bg-primary text-primary-foreground text-xs font-bold shrink-0">
-                A
+              <div className="flex items-center justify-center h-7 w-7 rounded-md bg-primary text-primary-foreground shrink-0">
+                <Truck className="h-4 w-4" />
               </div>
               <span className="flex-1 font-semibold text-sm truncate">OCO Trailer Rentals</span>
             </>
@@ -164,26 +202,26 @@ export function AppSidebarShell() {
           {collapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <button className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors cursor-pointer">
+                <a href="/app" className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors" aria-label={`Signed in as ${displayName}`}>
                   <Avatar className="h-6 w-6 shrink-0">
-                    <AvatarFallback className="text-[10px] bg-muted">U</AvatarFallback>
+                    <AvatarFallback className="text-[10px] bg-muted">{initials}</AvatarFallback>
                   </Avatar>
-                </button>
+                </a>
               </TooltipTrigger>
-              <TooltipContent side="right">User · user@example.com</TooltipContent>
+              <TooltipContent side="right">{displayName} · {displayEmail}</TooltipContent>
             </Tooltip>
           ) : (
-            <button className="flex items-center gap-2 rounded-md hover:bg-accent transition-colors cursor-pointer w-full px-2 py-1.5">
+            <a href="/app" className="flex items-center gap-2 rounded-md hover:bg-accent transition-colors w-full px-2 py-1.5">
               <Avatar className="h-6 w-6 shrink-0">
-                <AvatarFallback className="text-[10px] bg-muted">U</AvatarFallback>
+                <AvatarFallback className="text-[10px] bg-muted">{initials}</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-xs font-medium leading-tight truncate">User</p>
+                <p className="text-xs font-medium leading-tight truncate">{displayName}</p>
                 <p className="text-[10px] text-muted-foreground leading-tight truncate">
-                  user@example.com
+                  {displayEmail}
                 </p>
               </div>
-            </button>
+            </a>
           )}
 
           {/* Sign out */}

@@ -3,7 +3,7 @@ import { Link, createFileRoute, useNavigate, useSearch } from '@tanstack/react-r
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { BlinkClientBoundary } from '@/components/BlinkClientBoundary'
+import { ClientOnlyBoundary } from '@/components/ClientOnlyBoundary'
 import { AuthLoading, CustomerAuthLayout } from '@/components/CustomerAuthLayout'
 import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { safeInternalRedirect } from '@/lib/booking'
@@ -22,9 +22,9 @@ export const Route = createFileRoute('/login')({
 
 function LoginRoute() {
   return (
-    <BlinkClientBoundary fallback={<AuthLoading label="Loading sign in…" />}>
+    <ClientOnlyBoundary fallback={<AuthLoading label="Loading sign in…" />}>
       <LoginForm />
-    </BlinkClientBoundary>
+    </ClientOnlyBoundary>
   )
 }
 
