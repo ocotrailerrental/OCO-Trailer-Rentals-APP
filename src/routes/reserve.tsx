@@ -60,7 +60,7 @@ function ReservationForm() {
       if (trailerResult.error) throw trailerResult.error
       if (locationResult.error) throw locationResult.error
       if (!trailerResult.data) throw new Error('This trailer is no longer available.')
-      return { trailer: trailerResult.data as Trailer, locations: (locationResult.data ?? []) as Location[], profile: profileResult.data as Profile | null }
+      return { trailer: trailerResult.data as unknown as Trailer, locations: (locationResult.data ?? []) as unknown as Location[], profile: profileResult.data as unknown as Profile | null }
     },
   })
 
