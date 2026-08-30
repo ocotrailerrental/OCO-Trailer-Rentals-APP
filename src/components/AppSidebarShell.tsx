@@ -46,7 +46,7 @@ const NAV_ITEMS: NavItemDef[] = [
   { href: '/app/reservations', icon: <ClipboardList className="h-4 w-4" />, label: 'My Rentals' },
 ]
 
-function NavItem({ item, collapsed, pathname = '' }: { item: NavItemDef; collapsed: boolean; pathname?: string }) {
+function NavItem({ item, collapsed, pathname }: { item: NavItemDef; collapsed: boolean; pathname: string }) {
   const active = item.href === '/app'
     ? pathname === '/app' || pathname === '/app/'
     : pathname === item.href || pathname.startsWith(`${item.href}/`)
@@ -76,7 +76,8 @@ function NavItem({ item, collapsed, pathname = '' }: { item: NavItemDef; collaps
 }
 
 export function AppSidebarShell() {
-  const { pathname = '' } = useLocation()
+  const location = useLocation()
+  const pathname = typeof location?.pathname === 'string' ? location.pathname : ''
   // SSR always renders expanded; the saved preference is restored after mount.
   // Reading localStorage in the initializer makes the client's first render
   // differ from the server markup → hydration mismatch on hard refresh.
