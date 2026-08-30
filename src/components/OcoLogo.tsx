@@ -1,66 +1,65 @@
 import { cn } from '@/lib/utils'
 
 /**
- * The OCO badge mark, drawn from the company logo: an enclosed trailer inside a
- * steel-blue disc.
+ * OCO Trailer Rentals identity.
  *
- * The ring is `currentColor` on purpose. The real logo outlines the badge in deep
- * ink, which vanishes against the dark sidebar and hero. Inheriting the text colour
- * means the outline is dark on light surfaces and light on dark ones, so the mark
- * keeps its shape everywhere instead of only working on one background.
+ * The badge is traced from the owner's original artwork. The wordmark is not:
+ * the original render sets OCO as three rounded squares with inner squares and
+ * centre dots, which is the Instagram glyph -- it reads as a social app rather
+ * than an equipment company. These are real letterforms in a bold grotesque,
+ * widely tracked, and outlined to paths so they cannot reflow or fall back to a
+ * different face.
  *
- * The disc and the trailer stay fixed — those two colours are the logo.
+ * Two things to know before editing:
+ *
+ * 1. The ink-coloured parts are `currentColor`. That is why one component works
+ *    on the dark hero, the dark footer and a white auth card without a separate
+ *    reverse copy -- give the parent the text colour you want and the logo
+ *    follows. Only the steel disc and the white trailer are fixed; those two
+ *    colours are the logo.
+ *
+ * 2. The same geometry is published as static files in `public/logo/` for print,
+ *    signage and email. Change a shape here and change it there too, or the
+ *    website and the truck door stop matching.
+ *
+ * The wordmark reads TRAILER RENTALS with no "LLC" -- the original has none.
  */
+
+/** The circular badge alone. Use where the name is already nearby. */
 export function OcoMark({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 64 64"
+      viewBox="0 0 200 200"
       className={cn('shrink-0', className)}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
       focusable="false"
     >
-      <circle cx="32" cy="32" r="21" fill="#486C7B" stroke="currentColor" strokeWidth="3" />
-      {/* Enclosed trailer: rear wall, roof, slanted nose, deck. */}
-      <path d="M18 36V24h20l6 5v7z" fill="#FFFFFF" />
-      <path d="M38 24v12" stroke="#486C7B" strokeWidth="1.6" />
-      <circle cx="24" cy="40" r="3.4" fill="#FFFFFF" />
-      <circle cx="24" cy="40" r="1.3" fill="#16272F" />
-      <circle cx="39" cy="40" r="3.4" fill="#FFFFFF" />
-      <circle cx="39" cy="40" r="1.3" fill="#16272F" />
-      {/* Hitch */}
-      <path d="M18 36h-4" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+      <OcoMarkPaths />
     </svg>
   )
 }
 
-/**
- * Badge plus wordmark — the standard lockup for headers, footers and auth pages.
- *
- * The wordmark is set in type rather than traced as vector paths: the supplied
- * logo is a rendered mockup, not an editable file, so tracing it would be a guess
- * at letterforms. The weight, tracking and two-line hierarchy follow the logo, and
- * this can be swapped for the real vector wordmark whenever one exists.
- */
-export function OcoLockup({
-  className,
-  markClassName,
-  showLlc = true,
-}: {
-  className?: string
-  markClassName?: string
-  showLlc?: boolean
-}) {
+/** Badge plus wordmark — the standard lockup for headers, footers and auth pages. */
+export function OcoLockup({ className }: { className?: string }) {
   return (
-    <span className={cn('flex items-center gap-3', className)}>
-      <OcoMark className={cn('h-10 w-10', markClassName)} />
-      <span className="leading-none">
-        <strong className="block text-sm font-bold tracking-[0.18em]">OCO</strong>
-        <span className="mt-1 block text-[10px] font-medium uppercase tracking-[0.2em] opacity-70">
-          Trailer Rentals{showLlc ? ' LLC' : ''}
-        </span>
-      </span>
-    </span>
+    <svg
+      viewBox="0 0 633 200"
+      className={cn('h-10 w-auto shrink-0', className)}
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="OCO Trailer Rentals"
+    >
+      <OcoMarkPaths />
+      <g fill="currentColor" transform="translate(240 108)"><path transform="translate(0.00 0) scale(0.046875 -0.046875)" d="M870 1241Q694 1241 597.0 1111.0Q500 981 500 745Q500 510 597.0 380.0Q694 250 870 250Q1047 250 1144.0 380.0Q1241 510 1241 745Q1241 981 1144.0 1111.0Q1047 1241 870 1241ZM870 1520Q1230 1520 1434.0 1314.0Q1638 1108 1638 745Q1638 383 1434.0 177.0Q1230 -29 870 -29Q511 -29 306.5 177.0Q102 383 102 745Q102 1108 306.5 1314.0Q511 1520 870 1520Z" /><path transform="translate(97.61 0) scale(0.046875 -0.046875)" d="M1372 82Q1266 27 1151.0 -1.0Q1036 -29 911 -29Q538 -29 320.0 179.5Q102 388 102 745Q102 1103 320.0 1311.5Q538 1520 911 1520Q1036 1520 1151.0 1492.0Q1266 1464 1372 1409V1100Q1265 1173 1161.0 1207.0Q1057 1241 942 1241Q736 1241 618.0 1109.0Q500 977 500 745Q500 514 618.0 382.0Q736 250 942 250Q1057 250 1161.0 284.0Q1265 318 1372 391Z" /><path transform="translate(184.06 0) scale(0.046875 -0.046875)" d="M870 1241Q694 1241 597.0 1111.0Q500 981 500 745Q500 510 597.0 380.0Q694 250 870 250Q1047 250 1144.0 380.0Q1241 510 1241 745Q1241 981 1144.0 1111.0Q1047 1241 870 1241ZM870 1520Q1230 1520 1434.0 1314.0Q1638 1108 1638 745Q1638 383 1434.0 177.0Q1230 -29 870 -29Q511 -29 306.5 177.0Q102 383 102 745Q102 1108 306.5 1314.0Q511 1520 870 1520Z" /></g>
+      <g fill="currentColor" transform="translate(240 150)"><path transform="translate(0.00 0) scale(0.013184 -0.013184)" d="M10 1493H1386V1202H891V0H506V1202H10Z" /><path transform="translate(26.92 0) scale(0.013184 -0.013184)" d="M735 831Q856 831 908.5 876.0Q961 921 961 1024Q961 1126 908.5 1170.0Q856 1214 735 1214H573V831ZM573 565V0H188V1493H776Q1071 1493 1208.5 1394.0Q1346 1295 1346 1081Q1346 933 1274.5 838.0Q1203 743 1059 698Q1138 680 1200.5 616.5Q1263 553 1327 424L1536 0H1126L944 371Q889 483 832.5 524.0Q776 565 682 565Z" /><path transform="translate(56.21 0) scale(0.013184 -0.013184)" d="M1094 272H492L397 0H10L563 1493H1022L1575 0H1188ZM588 549H997L793 1143Z" /><path transform="translate(85.60 0) scale(0.013184 -0.013184)" d="M188 1493H573V0H188Z" /><path transform="translate(104.15 0) scale(0.013184 -0.013184)" d="M188 1493H573V291H1249V0H188Z" /><path transform="translate(129.85 0) scale(0.013184 -0.013184)" d="M188 1493H1227V1202H573V924H1188V633H573V291H1249V0H188Z" /><path transform="translate(156.80 0) scale(0.013184 -0.013184)" d="M735 831Q856 831 908.5 876.0Q961 921 961 1024Q961 1126 908.5 1170.0Q856 1214 735 1214H573V831ZM573 565V0H188V1493H776Q1071 1493 1208.5 1394.0Q1346 1295 1346 1081Q1346 933 1274.5 838.0Q1203 743 1059 698Q1138 680 1200.5 616.5Q1263 553 1327 424L1536 0H1126L944 371Q889 483 832.5 524.0Q776 565 682 565Z" /><path transform="translate(203.99 0) scale(0.013184 -0.013184)" d="M735 831Q856 831 908.5 876.0Q961 921 961 1024Q961 1126 908.5 1170.0Q856 1214 735 1214H573V831ZM573 565V0H188V1493H776Q1071 1493 1208.5 1394.0Q1346 1295 1346 1081Q1346 933 1274.5 838.0Q1203 743 1059 698Q1138 680 1200.5 616.5Q1263 553 1327 424L1536 0H1126L944 371Q889 483 832.5 524.0Q776 565 682 565Z" /><path transform="translate(233.28 0) scale(0.013184 -0.013184)" d="M188 1493H1227V1202H573V924H1188V633H573V291H1249V0H188Z" /><path transform="translate(260.22 0) scale(0.013184 -0.013184)" d="M188 1493H618L1161 469V1493H1526V0H1096L553 1024V0H188Z" /><path transform="translate(291.32 0) scale(0.013184 -0.013184)" d="M10 1493H1386V1202H891V0H506V1202H10Z" /><path transform="translate(318.24 0) scale(0.013184 -0.013184)" d="M1094 272H492L397 0H10L563 1493H1022L1575 0H1188ZM588 549H997L793 1143Z" /><path transform="translate(347.63 0) scale(0.013184 -0.013184)" d="M188 1493H573V291H1249V0H188Z" /><path transform="translate(373.34 0) scale(0.013184 -0.013184)" d="M1227 1446V1130Q1104 1185 987.0 1213.0Q870 1241 766 1241Q628 1241 562.0 1203.0Q496 1165 496 1085Q496 1025 540.5 991.5Q585 958 702 934L866 901Q1115 851 1220.0 749.0Q1325 647 1325 459Q1325 212 1178.5 91.5Q1032 -29 731 -29Q589 -29 446.0 -2.0Q303 25 160 78V403Q303 327 436.5 288.5Q570 250 694 250Q820 250 887.0 292.0Q954 334 954 412Q954 482 908.5 520.0Q863 558 727 588L578 621Q354 669 250.5 774.0Q147 879 147 1057Q147 1280 291.0 1400.0Q435 1520 705 1520Q828 1520 958.0 1501.5Q1088 1483 1227 1446Z" /></g>
+    </svg>
   )
+}
+
+/** Badge geometry without its own <svg> wrapper, so the lockup can reuse it. */
+function OcoMarkPaths() {
+  return <><circle cx="100" cy="100" r="87.5" fill="none" stroke="currentColor" strokeWidth="13" /><circle cx="100" cy="100" r="74" fill="#486C7B" /><circle cx="100" cy="100" r="77" fill="none" stroke="#FFFFFF" strokeWidth="6" /><path d="M 100.00 5.50 L 107.00 12.50 L 100.00 19.50 L 93.00 12.50 Z" fill="#FFFFFF" /><path d="M 24.22 136.75 L 31.22 143.75 L 24.22 150.75 L 17.22 143.75 Z" fill="#FFFFFF" /><path d="M 175.78 136.75 L 182.78 143.75 L 175.78 150.75 L 168.78 143.75 Z" fill="#FFFFFF" /><g transform="translate(3 1)"><rect x="76" y="74" width="72" height="34" rx="3" fill="#FFFFFF" /><path d="M 130 79 L 130 103" stroke="#486C7B" strokeWidth="2.4" strokeLinecap="round" /><rect x="72" y="108" width="78" height="4.5" rx="1.6" fill="#FFFFFF" /><rect x="50" y="108.5" width="24" height="3.5" rx="1.5" fill="#FFFFFF" /><rect x="44" y="104" width="8.5" height="13" rx="2.5" fill="#FFFFFF" /><path d="M 62 113 L 62 120" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" /><circle cx="98" cy="116" r="7.6" fill="#FFFFFF" /><circle cx="98" cy="116" r="3" fill="#486C7B" /><circle cx="122" cy="116" r="7.6" fill="#FFFFFF" /><circle cx="122" cy="116" r="3" fill="#486C7B" /></g></>
 }

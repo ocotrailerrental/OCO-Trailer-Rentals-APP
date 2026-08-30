@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ClientOnlyBoundary } from '@/components/ClientOnlyBoundary'
 import { AuthLoading } from '@/components/CustomerAuthLayout'
-import { BookingSearch, Location, ReserveSearch, Trailer, formatDate, formatMoney, parseReserveSearch, rentalEstimate, rentalDays, safeInternalRedirect } from '@/lib/booking'
+import { BookingSearch, Location, ReserveSearch, TRAILER_COLUMNS, Trailer, formatDate, formatMoney, parseReserveSearch, rentalEstimate, rentalDays, safeInternalRedirect } from '@/lib/booking'
 import { supabase } from '@/lib/supabase'
 
 export const Route = createFileRoute('/reserve')({
@@ -53,7 +53,7 @@ function ReservationForm() {
     enabled: Boolean(userId && search.trailerId && search.pickupLocationId && search.returnLocationId),
     queryFn: async () => {
       const [trailerResult, locationResult, profileResult] = await Promise.all([
-        supabase.from('oco_trailers').select('id,location_id,name,slug,trailer_type,length_feet,description,image_url,gvwr_lbs,payload_lbs,hitch_type,brake_connector,daily_rate,weekly_rate,monthly_rate,security_deposit,status').eq('id', search.trailerId).maybeSingle(),
+        supabase.from('oco_trailers').select(TRAILER_COLUMNS).eq('id', search.trailerId).maybeSingle(),
         supabase.from('oco_locations').select('id,name,city,state,timezone').in('id', [search.pickupLocationId, search.returnLocationId]).eq('is_active', true),
         supabase.from('oco_profiles').select('full_name,phone').eq('id', userId).maybeSingle(),
       ])

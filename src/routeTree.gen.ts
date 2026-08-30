@@ -20,6 +20,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppReservationsRouteImport } from './routes/app/reservations'
 import { Route as AppReservationsReservationIdRouteImport } from './routes/app/reservations.$reservationId'
+import { Route as TrailersSlugRouteImport } from './routes/trailers.$slug'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -49,6 +50,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const BookRoute = BookRouteImport.update({
   id: '/book',
   path: '/book',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrailersSlugRoute = TrailersSlugRouteImport.update({
+  id: '/trailers/$slug',
+  path: '/trailers/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/reserve': typeof ReserveRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/trailers/$slug': typeof TrailersSlugRoute
   '/app/reservations': typeof AppReservationsRouteWithChildren
   '/app/': typeof AppIndexRoute
   '/app/reservations/$reservationId': typeof AppReservationsReservationIdRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/reserve': typeof ReserveRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/trailers/$slug': typeof TrailersSlugRoute
   '/app/reservations': typeof AppReservationsRouteWithChildren
   '/app': typeof AppIndexRoute
   '/app/reservations/$reservationId': typeof AppReservationsReservationIdRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/reserve': typeof ReserveRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/trailers/$slug': typeof TrailersSlugRoute
   '/app/reservations': typeof AppReservationsRouteWithChildren
   '/app/': typeof AppIndexRoute
   '/app/reservations/$reservationId': typeof AppReservationsReservationIdRoute
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/reserve'
     | '/reset-password'
     | '/signup'
+    | '/trailers/$slug'
     | '/app/reservations'
     | '/app/'
     | '/app/reservations/$reservationId'
@@ -140,6 +150,7 @@ export interface FileRouteTypes {
     | '/reserve'
     | '/reset-password'
     | '/signup'
+    | '/trailers/$slug'
     | '/app/reservations'
     | '/app'
     | '/app/reservations/$reservationId'
@@ -153,6 +164,7 @@ export interface FileRouteTypes {
     | '/reserve'
     | '/reset-password'
     | '/signup'
+    | '/trailers/$slug'
     | '/app/reservations'
     | '/app/'
     | '/app/reservations/$reservationId'
@@ -167,6 +179,7 @@ export interface RootRouteChildren {
   ReserveRoute: typeof ReserveRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  TrailersSlugRoute: typeof TrailersSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -227,6 +240,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trailers/$slug': {
+      id: '/trailers/$slug'
+      path: '/trailers/$slug'
+      fullPath: '/trailers/$slug'
+      preLoaderRoute: typeof TrailersSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/': {
       id: '/app/'
       path: '/'
@@ -284,6 +304,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReserveRoute: ReserveRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  TrailersSlugRoute: TrailersSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -24,6 +24,74 @@ export type Trailer = {
   monthly_rate: number
   security_deposit: number
   status: string
+  // Specification fields. Optional because `oco_search_available_trailers` does
+  // not return them — the availability list does not need them, and typing them
+  // as required would make every cast of an RPC row a quiet lie.
+  axle_config?: string | null
+  axle_rating_lbs?: number | null
+  empty_weight_lbs?: number | null
+  tongue_weight_lbs?: number | null
+  deck_length_ft?: number | null
+  deck_width_in?: number | null
+  deck_surface?: string | null
+  ramp_type?: string | null
+  tire_size?: string | null
+  brake_type?: string | null
+  min_tow_vehicle?: string | null
+  features?: string[] | null
+}
+
+/**
+ * Every trailer column the public pages read. Kept as one constant so the
+ * homepage, the availability list and the trailer detail page cannot drift apart
+ * — a column added here reaches all three at once.
+ *
+ * VIN, licence plate and asset number are deliberately absent. They live in
+ * `oco_trailer_registration`, which is staff-only at the database level.
+ */
+export const TRAILER_COLUMNS =
+  'id,location_id,name,slug,trailer_type,length_feet,description,image_url,' +
+  'gvwr_lbs,payload_lbs,hitch_type,brake_connector,daily_rate,weekly_rate,' +
+  'monthly_rate,security_deposit,status,axle_config,axle_rating_lbs,' +
+  'empty_weight_lbs,tongue_weight_lbs,deck_length_ft,deck_width_in,' +
+  'deck_surface,ramp_type,tire_size,brake_type,min_tow_vehicle,features'
+
+export type Spec = { label: string; value: string; note?: string }
+
+const pounds = (value: number | null | undefined) =>
+  value == null ? null : `${Number(value).toLocaleString('en-US')} lb`
+
+/**
+ * Turns a trailer row into the specification rows the detail page lists.
+ *
+ * A spec with no value in the database is omitted entirely rather than shown as
+ * "—" or filled with a plausible default. These numbers tell a customer what
+ * they can safely tow, so a blank is honest and a guess is not.
+ */
+export function trailerSpecs(trailer: Trailer): Spec[] {
+  const rows: (Spec | null)[] = [
+    { label: 'Length', value: `${trailer.length_feet} ft` },
+    trailer.deck_length_ft ? { label: 'Deck length', value: `${trailer.deck_length_ft} ft` } : null,
+    trailer.deck_width_in ? { label: 'Deck width', value: `${trailer.deck_width_in} in` } : null,
+    trailer.deck_surface ? { label: 'Deck surface', value: trailer.deck_surface } : null,
+    trailer.gvwr_lbs
+      ? { label: 'GVWR', value: pounds(trailer.gvwr_lbs)!, note: 'Trailer plus cargo, fully loaded' }
+      : null,
+    trailer.payload_lbs
+      ? { label: 'Payload capacity', value: pounds(trailer.payload_lbs)!, note: 'The most you can put on the deck' }
+      : null,
+    trailer.empty_weight_lbs ? { label: 'Empty weight', value: pounds(trailer.empty_weight_lbs)! } : null,
+    trailer.tongue_weight_lbs ? { label: 'Tongue weight', value: pounds(trailer.tongue_weight_lbs)! } : null,
+    trailer.axle_config ? { label: 'Axles', value: trailer.axle_config } : null,
+    trailer.axle_rating_lbs ? { label: 'Axle rating', value: `${pounds(trailer.axle_rating_lbs)} each` } : null,
+    trailer.brake_type ? { label: 'Brakes', value: trailer.brake_type } : null,
+    trailer.hitch_type ? { label: 'Coupler', value: `${trailer.hitch_type} ball` } : null,
+    trailer.brake_connector ? { label: 'Wiring', value: `${trailer.brake_connector} connector` } : null,
+    trailer.tire_size ? { label: 'Tires', value: trailer.tire_size } : null,
+    trailer.ramp_type ? { label: 'Ramps', value: trailer.ramp_type } : null,
+    trailer.min_tow_vehicle ? { label: 'Tow vehicle', value: trailer.min_tow_vehicle } : null,
+  ]
+  return rows.filter((row): row is Spec => row !== null)
 }
 
 export type BookingSearch = {
