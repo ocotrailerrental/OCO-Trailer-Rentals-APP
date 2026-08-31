@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { ArrowRight, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -31,12 +31,14 @@ export function BookingSearchForm({
   submitLabel?: string
 }) {
   const navigate = useNavigate()
-  const today = localDateString(new Date())
+  // Keep one calendar baseline for this mounted form. Recomputing it during a
+  // hydration retry can overwrite dates the customer has already entered.
+  const today = useMemo(() => localDateString(new Date()), [])
 
   const [pickupLocationId, setPickupLocationId] = useState('')
   const [returnLocationId, setReturnLocationId] = useState('')
-  const [startDate, setStartDate] = useState(() => localDateString(new Date()))
-  const [endDate, setEndDate] = useState(() => addDays(localDateString(new Date()), 7))
+  const [startDate, setStartDate] = useState(today)
+  const [endDate, setEndDate] = useState(() => addDays(today, 7))
   const [delivery, setDelivery] = useState(false)
   const [searchError, setSearchError] = useState('')
 

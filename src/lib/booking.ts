@@ -128,6 +128,9 @@ export type Reservation = {
   payment_status: string
   reservation_status: string
   customer_notes: string | null
+  discount_code?: string | null
+  pre_discount_subtotal?: number
+  discount_amount?: number
   created_at: string
 }
 

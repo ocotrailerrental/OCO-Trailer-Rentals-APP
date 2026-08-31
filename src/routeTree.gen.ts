@@ -14,15 +14,18 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ReserveRouteImport } from './routes/reserve'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as BookRouteImport } from './routes/book'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
-import { Route as AppReservationsRouteImport } from './routes/app/reservations'
-import { Route as AppReservationsReservationIdRouteImport } from './routes/app/reservations.$reservationId'
 import { Route as TrailersSlugRouteImport } from './routes/trailers.$slug'
+import { Route as AppReservationsRouteImport } from './routes/app/reservations'
 import { Route as AppBookRouteImport } from './routes/app/book'
 import { Route as AppAdminRouteImport } from './routes/app/admin'
+import { Route as AppReservationsReservationIdRouteImport } from './routes/app/reservations.$reservationId'
+import { Route as AppReservationsReservationIdInspectionsInspectionTypeRouteImport } from './routes/app/reservations.$reservationId.inspections.$inspectionType'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -49,14 +52,19 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BookRoute = BookRouteImport.update({
   id: '/book',
   path: '/book',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TrailersSlugRoute = TrailersSlugRouteImport.update({
-  id: '/trailers/$slug',
-  path: '/trailers/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -74,9 +82,14 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAdminRoute = AppAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const TrailersSlugRoute = TrailersSlugRouteImport.update({
+  id: '/trailers/$slug',
+  path: '/trailers/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppReservationsRoute = AppReservationsRouteImport.update({
+  id: '/reservations',
+  path: '/reservations',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBookRoute = AppBookRouteImport.update({
@@ -84,9 +97,9 @@ const AppBookRoute = AppBookRouteImport.update({
   path: '/book',
   getParentRoute: () => AppRoute,
 } as any)
-const AppReservationsRoute = AppReservationsRouteImport.update({
-  id: '/reservations',
-  path: '/reservations',
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
 const AppReservationsReservationIdRoute =
@@ -95,54 +108,69 @@ const AppReservationsReservationIdRoute =
     path: '/$reservationId',
     getParentRoute: () => AppReservationsRoute,
   } as any)
+const AppReservationsReservationIdInspectionsInspectionTypeRoute =
+  AppReservationsReservationIdInspectionsInspectionTypeRouteImport.update({
+    id: '/inspections/$inspectionType',
+    path: '/inspections/$inspectionType',
+    getParentRoute: () => AppReservationsReservationIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/book': typeof BookRoute
+  '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reserve': typeof ReserveRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/trailers/$slug': typeof TrailersSlugRoute
   '/app/admin': typeof AppAdminRoute
   '/app/book': typeof AppBookRoute
   '/app/reservations': typeof AppReservationsRouteWithChildren
+  '/trailers/$slug': typeof TrailersSlugRoute
   '/app/': typeof AppIndexRoute
-  '/app/reservations/$reservationId': typeof AppReservationsReservationIdRoute
+  '/app/reservations/$reservationId': typeof AppReservationsReservationIdRouteWithChildren
+  '/app/reservations/$reservationId/inspections/$inspectionType': typeof AppReservationsReservationIdInspectionsInspectionTypeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/book': typeof BookRoute
+  '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reserve': typeof ReserveRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/trailers/$slug': typeof TrailersSlugRoute
   '/app/admin': typeof AppAdminRoute
   '/app/book': typeof AppBookRoute
   '/app/reservations': typeof AppReservationsRouteWithChildren
+  '/trailers/$slug': typeof TrailersSlugRoute
   '/app': typeof AppIndexRoute
-  '/app/reservations/$reservationId': typeof AppReservationsReservationIdRoute
+  '/app/reservations/$reservationId': typeof AppReservationsReservationIdRouteWithChildren
+  '/app/reservations/$reservationId/inspections/$inspectionType': typeof AppReservationsReservationIdInspectionsInspectionTypeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/book': typeof BookRoute
+  '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reserve': typeof ReserveRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/trailers/$slug': typeof TrailersSlugRoute
   '/app/admin': typeof AppAdminRoute
   '/app/book': typeof AppBookRoute
   '/app/reservations': typeof AppReservationsRouteWithChildren
+  '/trailers/$slug': typeof TrailersSlugRoute
   '/app/': typeof AppIndexRoute
-  '/app/reservations/$reservationId': typeof AppReservationsReservationIdRoute
+  '/app/reservations/$reservationId': typeof AppReservationsReservationIdRouteWithChildren
+  '/app/reservations/$reservationId/inspections/$inspectionType': typeof AppReservationsReservationIdInspectionsInspectionTypeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -150,54 +178,65 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/book'
+    | '/contact'
+    | '/faq'
     | '/forgot-password'
     | '/login'
     | '/reserve'
     | '/reset-password'
     | '/signup'
-    | '/trailers/$slug'
     | '/app/admin'
     | '/app/book'
     | '/app/reservations'
+    | '/trailers/$slug'
     | '/app/'
     | '/app/reservations/$reservationId'
+    | '/app/reservations/$reservationId/inspections/$inspectionType'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/book'
+    | '/contact'
+    | '/faq'
     | '/forgot-password'
     | '/login'
     | '/reserve'
     | '/reset-password'
     | '/signup'
-    | '/trailers/$slug'
     | '/app/admin'
     | '/app/book'
     | '/app/reservations'
+    | '/trailers/$slug'
     | '/app'
     | '/app/reservations/$reservationId'
+    | '/app/reservations/$reservationId/inspections/$inspectionType'
   id:
     | '__root__'
     | '/'
     | '/app'
     | '/book'
+    | '/contact'
+    | '/faq'
     | '/forgot-password'
     | '/login'
     | '/reserve'
     | '/reset-password'
     | '/signup'
-    | '/trailers/$slug'
     | '/app/admin'
     | '/app/book'
     | '/app/reservations'
+    | '/trailers/$slug'
     | '/app/'
     | '/app/reservations/$reservationId'
+    | '/app/reservations/$reservationId/inspections/$inspectionType'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   BookRoute: typeof BookRoute
+  ContactRoute: typeof ContactRoute
+  FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   ReserveRoute: typeof ReserveRoute
@@ -243,6 +282,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/book': {
       id: '/book'
       path: '/book'
@@ -264,13 +317,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/trailers/$slug': {
-      id: '/trailers/$slug'
-      path: '/trailers/$slug'
-      fullPath: '/trailers/$slug'
-      preLoaderRoute: typeof TrailersSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/app/': {
       id: '/app/'
       path: '/'
@@ -278,11 +324,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/admin': {
-      id: '/app/admin'
-      path: '/admin'
-      fullPath: '/app/admin'
-      preLoaderRoute: typeof AppAdminRouteImport
+    '/trailers/$slug': {
+      id: '/trailers/$slug'
+      path: '/trailers/$slug'
+      fullPath: '/trailers/$slug'
+      preLoaderRoute: typeof TrailersSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/reservations': {
+      id: '/app/reservations'
+      path: '/reservations'
+      fullPath: '/app/reservations'
+      preLoaderRoute: typeof AppReservationsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/book': {
@@ -292,11 +345,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBookRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/reservations': {
-      id: '/app/reservations'
-      path: '/reservations'
-      fullPath: '/app/reservations'
-      preLoaderRoute: typeof AppReservationsRouteImport
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/reservations/$reservationId': {
@@ -306,15 +359,38 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReservationsReservationIdRouteImport
       parentRoute: typeof AppReservationsRoute
     }
+    '/app/reservations/$reservationId/inspections/$inspectionType': {
+      id: '/app/reservations/$reservationId/inspections/$inspectionType'
+      path: '/inspections/$inspectionType'
+      fullPath: '/app/reservations/$reservationId/inspections/$inspectionType'
+      preLoaderRoute: typeof AppReservationsReservationIdInspectionsInspectionTypeRouteImport
+      parentRoute: typeof AppReservationsReservationIdRoute
+    }
   }
 }
 
+interface AppReservationsReservationIdRouteChildren {
+  AppReservationsReservationIdInspectionsInspectionTypeRoute: typeof AppReservationsReservationIdInspectionsInspectionTypeRoute
+}
+
+const AppReservationsReservationIdRouteChildren: AppReservationsReservationIdRouteChildren =
+  {
+    AppReservationsReservationIdInspectionsInspectionTypeRoute:
+      AppReservationsReservationIdInspectionsInspectionTypeRoute,
+  }
+
+const AppReservationsReservationIdRouteWithChildren =
+  AppReservationsReservationIdRoute._addFileChildren(
+    AppReservationsReservationIdRouteChildren,
+  )
+
 interface AppReservationsRouteChildren {
-  AppReservationsReservationIdRoute: typeof AppReservationsReservationIdRoute
+  AppReservationsReservationIdRoute: typeof AppReservationsReservationIdRouteWithChildren
 }
 
 const AppReservationsRouteChildren: AppReservationsRouteChildren = {
-  AppReservationsReservationIdRoute: AppReservationsReservationIdRoute,
+  AppReservationsReservationIdRoute:
+    AppReservationsReservationIdRouteWithChildren,
 }
 
 const AppReservationsRouteWithChildren = AppReservationsRoute._addFileChildren(
@@ -341,6 +417,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   BookRoute: BookRoute,
+  ContactRoute: ContactRoute,
+  FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   ReserveRoute: ReserveRoute,

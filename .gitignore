@@ -12,6 +12,8 @@ dist
 dist-ssr
 .vite-out
 .vite
+playwright-report
+test-results
 *.local
 
 # Environment — never commit real credentials. `.env.example` is the template
@@ -19,6 +21,7 @@ dist-ssr
 .env
 .env.*
 !.env.example
+!.env.test.example
 .vercel
 
 # Editor directories and files
