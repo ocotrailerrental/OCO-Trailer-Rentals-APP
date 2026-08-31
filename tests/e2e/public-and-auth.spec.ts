@@ -9,7 +9,9 @@ test("home, search, trailer links, FAQ, and contact work", async ({ page }) => {
   await expect(page).toHaveURL(/\/book\?/);
   await expect(page.getByText(/2026|Oct|October/).first()).toBeVisible();
   await page.goto("/trailers/20-foot-car-hauler");
-  await expect(page.getByRole("heading", { name: /20.*car hauler/i })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /20.*car hauler/i }),
+  ).toBeVisible();
   await page.goto("/faq");
   await expect(
     page.getByRole("heading", { name: /frequently asked/i }),
@@ -18,6 +20,8 @@ test("home, search, trailer links, FAQ, and contact work", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: /local trailer team/i }),
   ).toBeVisible();
+  await expect(page.getByRole("link", { name: /@/ }).first()).toBeVisible();
+  await expect(page.locator('a[href^="tel:"]').first()).toBeVisible();
 });
 
 async function signIn(page: Page, email: string) {
@@ -38,7 +42,9 @@ test("manager receives a staff session without payment activity", async ({
 }) => {
   await signIn(page, "audit-manager@oco.test");
   await page.goto("/app/admin");
-  await expect(page.getByRole("heading", { name: /Omaha overview/i })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /Omaha overview/i }),
+  ).toBeVisible();
 });
 
 test("admin receives company staff navigation without payment activity", async ({

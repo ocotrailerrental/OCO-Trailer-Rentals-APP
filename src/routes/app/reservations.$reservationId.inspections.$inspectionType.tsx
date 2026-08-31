@@ -29,6 +29,15 @@ type Photo = {
   notes: string | null;
   url?: string;
 };
+const REQUIRED_VIEWS = [
+  "front",
+  "rear",
+  "driver_side",
+  "passenger_side",
+  "deck",
+  "hitch",
+  "tires",
+] as const;
 
 export const Route = createFileRoute(
   "/app/reservations/$reservationId/inspections/$inspectionType",
@@ -79,6 +88,12 @@ function InspectionPage() {
         queryKey: ["reservation", reservationId],
       });
     },
+    onError: (error) =>
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to save the inspection.",
+      ),
   });
 
   async function upload(event: FormEvent) {
@@ -125,6 +140,10 @@ function InspectionPage() {
       />
     );
   const { inspection, photos, reservationNumber } = query.data;
+  const uploadedViews = new Set(photos.map((photo) => photo.photo_category));
+  const missingViews = REQUIRED_VIEWS.filter(
+    (view) => !uploadedViews.has(view),
+  );
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -258,6 +277,25 @@ function InspectionPage() {
               </figure>
             ))}
           </div>
+          <div className="mt-6 rounded-lg bg-secondary/50 p-4">
+            <p className="text-sm font-semibold">Required views</p>
+            <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+              {REQUIRED_VIEWS.map((view) => (
+                <li key={view} className="flex items-center gap-2 capitalize">
+                  <span
+                    className={
+                      uploadedViews.has(view)
+                        ? "text-emerald-600"
+                        : "text-muted-foreground"
+                    }
+                  >
+                    {uploadedViews.has(view) ? "✓" : "○"}
+                  </span>
+                  {view.replace("_", " ")}
+                </li>
+              ))}
+            </ul>
+          </div>
           {photos.length === 0 && (
             <p className="mt-5 text-sm text-muted-foreground">
               No photos uploaded yet. Add clear views before completing the
@@ -285,7 +323,7 @@ function InspectionPage() {
         </Button>
         <Button
           onClick={() => save.mutate(true)}
-          disabled={save.isPending || photos.length === 0}
+          disabled={save.isPending || missingViews.length > 0}
         >
           Complete {inspectionType} inspection
         </Button>

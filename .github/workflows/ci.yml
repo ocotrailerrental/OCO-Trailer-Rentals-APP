@@ -1,0 +1,36 @@
+name: OCO CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      OCO_AUDIT_PASSWORD: ${{ secrets.OCO_AUDIT_PASSWORD }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
+      - run: npm run build
+      - name: Install browser
+        if: env.OCO_AUDIT_PASSWORD != ''
+        run: npx playwright install --with-deps chromium
+      - name: Browser tests
+        if: env.OCO_AUDIT_PASSWORD != ''
+        run: npm run test:e2e
+      - name: SQL security tests
+        if: env.SUPABASE_DB_URL != ''
+        run: psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/rls_and_workflow.sql

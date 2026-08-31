@@ -18,6 +18,11 @@ begin
   assert exists(select 1 from pg_policies where tablename='oco_call_logs' and policyname='OCO call logs scoped staff manage'), 'call logs are not yard scoped';
   assert exists(select 1 from information_schema.columns where table_name='oco_reservations' and column_name='discount_amount'), 'discount results are not stored';
   assert exists(select 1 from pg_policies where tablename='oco_trailers' and policyname='OCO trailers authenticated scoped read'), 'signed-in trailer catalog is not role scoped';
+  assert exists(select 1 from pg_trigger where tgname='oco_inspection_required_photos_trigger'), 'required inspection photo trigger is missing';
+  assert exists(select 1 from pg_trigger where tgname='oco_inspection_photo_audit_trigger'), 'photo audit trigger is missing';
+  assert (select relrowsecurity from pg_class where oid='public.oco_inspection_photo_audit'::regclass), 'photo audit RLS is disabled';
+  assert not has_function_privilege('anon', 'public.oco_request_photo_deletion(uuid)', 'EXECUTE'), 'photo deletion request is anonymous';
+  assert exists(select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='OCO inspection storage retention delete'), 'storage retention delete policy is missing';
 end
 $$;
 rollback;

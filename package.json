@@ -12,6 +12,7 @@
     "lint:js": "eslint . --report-unused-disable-directives",
     "lint:types": "tsc --noEmit",
     "lint": "npm run lint:types && npm run lint:js && npm run lint:css",
+    "verify": "npm run lint && npm test",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:all": "npm run lint && npm run test && npm run build && npm run test:e2e"

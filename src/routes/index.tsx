@@ -18,6 +18,7 @@ import { OcoLockup } from "@/components/OcoLogo";
 import { BookingSearchForm } from "@/components/BookingSearchForm";
 import { Location, TRAILER_COLUMNS, Trailer, formatMoney } from "@/lib/booking";
 import { supabase } from "@/lib/supabase";
+import { formatPhone, loadPublicContacts, phoneHref } from "@/lib/contacts";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -66,6 +67,11 @@ function HomeContent() {
       if (error) throw error;
       return (data ?? []) as unknown as Trailer[];
     },
+  });
+  const contactsQuery = useQuery({
+    queryKey: ["public-contacts"],
+    enabled: isHydrated,
+    queryFn: loadPublicContacts,
   });
   const locations = locationsQuery.data ?? EMPTY_LOCATIONS;
   // Rates come from the fleet, never from a number typed into the page. An empty
@@ -393,6 +399,31 @@ function HomeContent() {
             <p className="mt-4 text-sm text-sidebar-foreground/55">
               Haul More. Go Further.
             </p>
+            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-sidebar-foreground/70">
+              {contactsQuery.data?.map((contact) => (
+                <span
+                  key={contact.email ?? contact.phone}
+                  className="flex flex-wrap gap-3"
+                >
+                  {contact.phone && (
+                    <a
+                      href={phoneHref(contact.phone)}
+                      className="hover:text-sidebar-foreground"
+                    >
+                      {formatPhone(contact.phone)}
+                    </a>
+                  )}
+                  {contact.email && (
+                    <a
+                      href={`mailto:${contact.email}`}
+                      className="hover:text-sidebar-foreground"
+                    >
+                      {contact.email}
+                    </a>
+                  )}
+                </span>
+              ))}
+            </div>
           </div>
           <div className="flex flex-wrap gap-5 text-sm text-sidebar-foreground/60">
             <a href="/faq" className="hover:text-sidebar-foreground">

@@ -53,6 +53,12 @@ type DetailData = {
     condition_status: string;
     completed_at: string | null;
   }>;
+  photoAudit: Array<{
+    id: string;
+    event_type: string;
+    details: Record<string, unknown>;
+    created_at: string;
+  }>;
 };
 
 function ReservationDetailPage() {
@@ -89,8 +95,15 @@ function ReservationDetailPage() {
     );
   }
 
-  const { reservation, trailer, pickup, dropoff, payments, inspections } =
-    query.data;
+  const {
+    reservation,
+    trailer,
+    pickup,
+    dropoff,
+    payments,
+    inspections,
+    photoAudit,
+  } = query.data;
   const status = statusInfo(reservation.reservation_status);
   const timing = timingNote(
     reservation.reservation_status,
@@ -269,6 +282,32 @@ function ReservationDetailPage() {
               </p>
             </CardContent>
           </Card>
+          {photoAudit.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-serif text-2xl">
+                  Inspection audit history
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ol className="space-y-3 text-sm">
+                  {photoAudit.map((event) => (
+                    <li
+                      key={event.id}
+                      className="flex items-start justify-between gap-4 border-b border-border pb-3 last:border-0"
+                    >
+                      <span className="capitalize">
+                      {event.event_type.split("_").join(" ")}
+                      </span>
+                      <time className="shrink-0 text-xs text-muted-foreground">
+                        {new Date(event.created_at).toLocaleString()}
+                      </time>
+                    </li>
+                  ))}
+                </ol>
+              </CardContent>
+            </Card>
+          )}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-serif text-2xl">
@@ -375,34 +414,45 @@ async function loadReservation(id: string): Promise<DetailData | null> {
   if (!reservationResult.data) return null;
   const reservation = reservationResult.data as unknown as Reservation;
 
-  const [trailerResult, locationsResult, paymentsResult, inspectionsResult] =
-    await Promise.all([
-      supabase
-        .from("oco_trailers")
-        .select("name,slug,image_url,length_feet,description")
-        .eq("id", reservation.trailer_id)
-        .maybeSingle(),
-      supabase
-        .from("oco_locations")
-        .select("id,name,city,timezone")
-        .in("id", [
-          reservation.pickup_location_id,
-          reservation.return_location_id,
-        ]),
-      supabase
-        .from("oco_payments")
-        .select("id,amount,method,status,provider,paid_at,created_at")
-        .eq("reservation_id", reservation.id)
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("oco_inspections")
-        .select("id,inspection_type,condition_status,completed_at")
-        .eq("reservation_id", reservation.id),
-    ]);
+  const [
+    trailerResult,
+    locationsResult,
+    paymentsResult,
+    inspectionsResult,
+    auditResult,
+  ] = await Promise.all([
+    supabase
+      .from("oco_trailers")
+      .select("name,slug,image_url,length_feet,description")
+      .eq("id", reservation.trailer_id)
+      .maybeSingle(),
+    supabase
+      .from("oco_locations")
+      .select("id,name,city,timezone")
+      .in("id", [
+        reservation.pickup_location_id,
+        reservation.return_location_id,
+      ]),
+    supabase
+      .from("oco_payments")
+      .select("id,amount,method,status,provider,paid_at,created_at")
+      .eq("reservation_id", reservation.id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("oco_inspections")
+      .select("id,inspection_type,condition_status,completed_at")
+      .eq("reservation_id", reservation.id),
+    supabase
+      .from("oco_inspection_photo_audit")
+      .select("id,event_type,details,created_at")
+      .eq("reservation_id", reservation.id)
+      .order("created_at", { ascending: false }),
+  ]);
   if (trailerResult.error) throw trailerResult.error;
   if (locationsResult.error) throw locationsResult.error;
   if (paymentsResult.error) throw paymentsResult.error;
   if (inspectionsResult.error) throw inspectionsResult.error;
+  if (auditResult.error) throw auditResult.error;
 
   const locations = (locationsResult.data ?? []) as unknown as LocationRef[];
   return {
@@ -416,5 +466,6 @@ async function loadReservation(id: string): Promise<DetailData | null> {
       null,
     payments: (paymentsResult.data ?? []) as unknown as Payment[],
     inspections: (inspectionsResult.data ?? []) as DetailData["inspections"],
+    photoAudit: (auditResult.data ?? []) as DetailData["photoAudit"],
   };
 }

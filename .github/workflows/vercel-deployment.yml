@@ -1,0 +1,31 @@
+name: Verify Vercel deployment
+
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-and-database:
+    if: github.event.deployment_status.state == 'success' && startsWith(github.event.deployment_status.target_url, 'https://')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PLAYWRIGHT_BASE_URL: ${{ github.event.deployment_status.target_url }}
+      OCO_AUDIT_PASSWORD: ${{ secrets.OCO_AUDIT_PASSWORD }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Browser tests against deployed URL
+        if: env.OCO_AUDIT_PASSWORD != ''
+        run: npm run test:e2e
+      - name: SQL security tests
+        if: env.SUPABASE_DB_URL != ''
+        run: psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/rls_and_workflow.sql
