@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight, CalendarDays, LogOut, UserRound } from 'lucide-react'
+import { ArrowRight, CalendarDays, CalendarPlus, LogOut, UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -122,9 +122,16 @@ function DashboardHome() {
             Your OCO profile and rental home base.
           </p>
         </div>
-        <Button variant="outline" onClick={signOut} className="w-full gap-2 bg-transparent sm:w-auto">
-          <LogOut className="h-4 w-4" /> Sign out
-        </Button>
+        <div className="flex w-full gap-3 sm:w-auto">
+          <Link to="/app/book" className="flex-1 sm:flex-none">
+            <Button className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+              <CalendarPlus className="h-4 w-4" /> Book a trailer
+            </Button>
+          </Link>
+          <Button variant="outline" onClick={signOut} className="gap-2 bg-transparent">
+            <LogOut className="h-4 w-4" /> Sign out
+          </Button>
+        </div>
       </div>
 
       {(error || message) && (
@@ -239,7 +246,7 @@ function DashboardHome() {
                   When you reserve a trailer it will show up here with its dates and status.
                 </p>
                 <a
-                  href="/#book"
+                  href="/app/book"
                   className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
                 >
                   Find a trailer <ArrowRight className="h-4 w-4" />

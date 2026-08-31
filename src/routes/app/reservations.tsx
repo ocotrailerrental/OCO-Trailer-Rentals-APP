@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowRight, CalendarDays, CircleAlert, MapPin, Truck } from 'lucide-react'
+import { ArrowRight, CalendarDays, CalendarPlus, CircleAlert, MapPin, Truck } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { TrailerImage } from '@/components/TrailerImage'
 import { Reservation, formatDate, formatMoney, localDateString } from '@/lib/booking'
@@ -47,14 +48,21 @@ function ReservationsPage() {
 
   return (
     <div className="space-y-10">
-      <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
-          Customer account
-        </p>
-        <h1 className="mt-2 font-serif text-4xl">My rentals</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Everything you have booked with OCO, current and past.
-        </p>
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
+            Customer account
+          </p>
+          <h1 className="mt-2 font-serif text-4xl">My rentals</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Everything you have booked with OCO, current and past.
+          </p>
+        </div>
+        <Link to="/app/book">
+          <Button className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto">
+            <CalendarPlus className="h-4 w-4" /> Book a trailer
+          </Button>
+        </Link>
       </div>
 
       <RentalSection
@@ -101,7 +109,7 @@ function RentalSection({
             <p className="mt-3 text-sm text-muted-foreground">{empty}</p>
             {emptyAction && (
               <a
-                href="/#book"
+                href="/app/book"
                 className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
               >
                 Find a trailer <ArrowRight className="h-4 w-4" />

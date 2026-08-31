@@ -24,6 +24,7 @@ import {
 import {
   LayoutDashboard,
   ClipboardList,
+  CalendarPlus,
   LogOut,
   PanelLeft,
 } from 'lucide-react'
@@ -57,6 +58,7 @@ interface NavItemDef {
 // e.g. `src/routes/app/items.tsx` → { href: '/app/items', label: 'Items' }.
 const NAV_ITEMS: NavItemDef[] = [
   { href: '/app', icon: <LayoutDashboard className="h-4 w-4" />, label: 'Dashboard' },
+  { href: '/app/book', icon: <CalendarPlus className="h-4 w-4" />, label: 'Book a trailer' },
   { href: '/app/reservations', icon: <ClipboardList className="h-4 w-4" />, label: 'My Rentals' },
 ]
 
