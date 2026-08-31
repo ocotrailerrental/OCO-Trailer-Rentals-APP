@@ -1,15 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
+import { useState } from 'react'
 import {
   Banknote,
   Building2,
   CircleAlert,
   CreditCard,
+  Percent,
   ShieldCheck,
+  Tag,
+  Trash2,
   Truck,
   Users,
   Wallet,
 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { TrailerImage } from '@/components/TrailerImage'
 import { formatDate, formatMoney } from '@/lib/booking'
@@ -17,6 +24,7 @@ import { statusClass, statusInfo } from '@/lib/reservation-status'
 import {
   ALL_ROLES,
   AdminData,
+  AdminDiscount,
   AdminLocation,
   AdminProfile,
   STAFF_ROLES,
@@ -26,7 +34,7 @@ import {
 } from '@/lib/admin'
 import { supabase } from '@/lib/supabase'
 
-const TABS = ['finance', 'trailers', 'locations', 'team'] as const
+const TABS = ['finance', 'trailers', 'discounts', 'locations', 'team'] as const
 type Tab = (typeof TABS)[number]
 
 // Exactly the values `oco_trailers_status_check` allows. Offering anything else
@@ -88,12 +96,24 @@ function AdminConsole() {
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
           Administration
         </p>
-        <h1 className="mt-2 font-serif text-4xl">Business overview</h1>
+        <h1 className="mt-2 font-serif text-4xl">
+          {data.isManager ? `${scopeName(data)} overview` : 'Business overview'}
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          {data.locations.length} location{data.locations.length === 1 ? '' : 's'} ·{' '}
-          {data.trailers.length} trailer{data.trailers.length === 1 ? '' : 's'} ·{' '}
-          {data.profiles.filter(p => STAFF_ROLES.includes(p.role)).length} on the team
+          {data.isManager
+            ? 'You are seeing your own yard only. Figures and records from other locations are not included.'
+            : `${data.locations.length} location${data.locations.length === 1 ? '' : 's'} · ${
+                data.trailers.length
+              } trailer${data.trailers.length === 1 ? '' : 's'} · ${
+                data.profiles.filter(p => STAFF_ROLES.includes(p.role)).length
+              } on the team`}
         </p>
+        {data.isManager && !data.managerLocationId && (
+          <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            Your account is a manager but has no home yard assigned, so there is nothing to show.
+            Ask an administrator to set your location on the Team tab.
+          </p>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -142,6 +162,7 @@ function AdminConsole() {
 
       {tab === 'finance' && <FinanceTab data={data} />}
       {tab === 'trailers' && <TrailersTab data={data} />}
+      {tab === 'discounts' && <DiscountsTab data={data} />}
       {tab === 'locations' && <LocationsTab data={data} />}
       {tab === 'team' && <TeamTab data={data} />}
     </div>
@@ -295,6 +316,287 @@ function FinanceTab({ data }: { data: AdminData }) {
   )
 }
 
+/* ------------------------------------------------------------- discounts tab */
+
+function scopeName(data: AdminData) {
+  const home = data.locations.find(location => location.id === data.managerLocationId)
+  return home ? home.city : 'Your yard'
+}
+
+function DiscountsTab({ data }: { data: AdminData }) {
+  const queryClient = useQueryClient()
+  const [open, setOpen] = useState(false)
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-console'] })
+
+  const toggle = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from('oco_discounts').update({ is_active }).eq('id', id)
+      if (error) throw error
+    },
+    onSettled: refresh,
+    onError: e => window.alert(`Not saved: ${e instanceof Error ? e.message : 'unknown error'}`),
+  })
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('oco_discounts').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSettled: refresh,
+    onError: e => window.alert(`Not deleted: ${e instanceof Error ? e.message : 'unknown error'}`),
+  })
+
+  const locationName = (id: string | null) =>
+    id ? data.locations.find(l => l.id === id)?.city ?? 'Unknown yard' : 'All locations'
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-lg border border-border bg-secondary/40 px-4 py-3 text-sm text-muted-foreground">
+        <strong className="font-medium text-foreground">
+          These codes are not applied at checkout yet.
+        </strong>{' '}
+        You can create and manage them here, but the booking calculation does not read this table,
+        so a customer entering a code today would still pay full price. Wiring it into pricing
+        changes what people are charged, so say the word and it gets done deliberately.
+      </div>
+
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="font-serif text-2xl">
+          Discount codes <span className="text-muted-foreground">({data.discounts.length})</span>
+        </h2>
+        <Button
+          onClick={() => setOpen(value => !value)}
+          className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          <Tag className="h-4 w-4" /> {open ? 'Cancel' : 'New code'}
+        </Button>
+      </div>
+
+      {open && <DiscountForm data={data} onDone={() => { setOpen(false); refresh() }} />}
+
+      {data.discounts.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="p-8 text-center">
+            <Percent className="mx-auto h-8 w-8 text-muted-foreground/50" />
+            <p className="mt-3 text-sm text-muted-foreground">
+              No discount codes yet.
+              {data.isManager && ' Codes you create will apply to your yard only.'}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {data.discounts.map((discount: AdminDiscount) => {
+            const usedUp = discount.max_uses !== null && discount.times_used >= discount.max_uses
+            return (
+              <Card key={discount.id}>
+                <CardContent className="flex flex-wrap items-start justify-between gap-4 p-5">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <span className="rounded-md bg-secondary px-2.5 py-1 font-mono text-sm font-semibold tracking-wider">
+                        {discount.code}
+                      </span>
+                      <span className="font-serif text-xl">
+                        {discount.kind === 'percent'
+                          ? `${Number(discount.value)}% off`
+                          : `${formatMoney(discount.value)} off`}
+                      </span>
+                      {!discount.is_active && (
+                        <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
+                          Off
+                        </span>
+                      )}
+                      {usedUp && (
+                        <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                          Fully used
+                        </span>
+                      )}
+                    </div>
+                    {discount.description && (
+                      <p className="mt-2 text-sm text-muted-foreground">{discount.description}</p>
+                    )}
+                    <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <span>{locationName(discount.location_id)}</span>
+                      {discount.min_days && <span>{discount.min_days}+ day rentals</span>}
+                      {discount.starts_on && <span>From {formatDate(discount.starts_on)}</span>}
+                      {discount.ends_on && <span>Until {formatDate(discount.ends_on)}</span>}
+                      <span>
+                        Used {discount.times_used}
+                        {discount.max_uses ? ` of ${discount.max_uses}` : ' times'}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Toggle
+                      checked={discount.is_active}
+                      label="Active"
+                      onChange={value => toggle.mutate({ id: discount.id, is_active: value })}
+                    />
+                    <button
+                      type="button"
+                      aria-label={`Delete ${discount.code}`}
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `Delete the code ${discount.code}? This removes the record entirely. ` +
+                              `If you only want to stop it being used, switch Active off instead.`
+                          )
+                        ) {
+                          remove.mutate(discount.id)
+                        }
+                      }}
+                      className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function DiscountForm({ data, onDone }: { data: AdminData; onDone: () => void }) {
+  const [code, setCode] = useState('')
+  const [description, setDescription] = useState('')
+  const [kind, setKind] = useState<'percent' | 'amount'>('percent')
+  const [value, setValue] = useState('10')
+  // A manager can only ever create a code for their own yard, and the database
+  // agrees: the insert policy rejects any other location_id.
+  const [locationId, setLocationId] = useState(data.isManager ? data.managerLocationId ?? '' : '')
+  const [minDays, setMinDays] = useState('')
+  const [startsOn, setStartsOn] = useState('')
+  const [endsOn, setEndsOn] = useState('')
+  const [maxUses, setMaxUses] = useState('')
+  const [error, setError] = useState('')
+
+  const create = useMutation({
+    mutationFn: async () => {
+      const trimmed = code.trim().toUpperCase()
+      const amount = Number(value)
+      if (!trimmed) throw new Error('Give the code a name, for example SUMMER25.')
+      if (!Number.isFinite(amount) || amount <= 0) throw new Error('The value must be above zero.')
+      if (kind === 'percent' && amount > 100) throw new Error('A percentage cannot exceed 100.')
+      if (startsOn && endsOn && endsOn < startsOn)
+        throw new Error('The end date cannot be before the start date.')
+
+      const { error: insertError } = await supabase.from('oco_discounts').insert({
+        code: trimmed,
+        description: description.trim() || null,
+        kind,
+        value: amount,
+        location_id: locationId || null,
+        min_days: minDays ? Number(minDays) : null,
+        starts_on: startsOn || null,
+        ends_on: endsOn || null,
+        max_uses: maxUses ? Number(maxUses) : null,
+        created_by: data.selfId,
+      })
+      if (insertError) throw insertError
+    },
+    onSuccess: onDone,
+    onError: e => setError(e instanceof Error ? e.message : 'The code was not created.'),
+  })
+
+  return (
+    <Card>
+      <CardContent className="p-5">
+        <h3 className="font-serif text-xl">New discount code</h3>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-2">
+            <Label htmlFor="d-code">Code</Label>
+            <Input
+              id="d-code"
+              value={code}
+              onChange={e => setCode(e.target.value.toUpperCase())}
+              placeholder="SUMMER25"
+              className="font-mono tracking-wider"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="d-kind">Type</Label>
+            <select
+              id="d-kind"
+              value={kind}
+              onChange={e => setKind(e.target.value as 'percent' | 'amount')}
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="percent">Percentage off</option>
+              <option value="amount">Fixed amount off</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="d-value">{kind === 'percent' ? 'Percent' : 'Amount ($)'}</Label>
+            <Input id="d-value" type="number" min="0" value={value} onChange={e => setValue(e.target.value)} />
+          </div>
+          <div className="space-y-2 sm:col-span-2 lg:col-span-3">
+            <Label htmlFor="d-desc">Description</Label>
+            <Input
+              id="d-desc"
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Off-season promotion for returning customers"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="d-loc">Applies to</Label>
+            <select
+              id="d-loc"
+              value={locationId}
+              onChange={e => setLocationId(e.target.value)}
+              disabled={data.isManager}
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-60"
+            >
+              {!data.isManager && <option value="">All locations</option>}
+              {data.locations.map(location => (
+                <option key={location.id} value={location.id}>
+                  {location.city}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="d-min">Minimum rental days</Label>
+            <Input id="d-min" type="number" min="1" value={minDays} onChange={e => setMinDays(e.target.value)} placeholder="Any" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="d-max">Maximum uses</Label>
+            <Input id="d-max" type="number" min="1" value={maxUses} onChange={e => setMaxUses(e.target.value)} placeholder="Unlimited" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="d-start">Starts</Label>
+            <Input id="d-start" type="date" value={startsOn} onChange={e => setStartsOn(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="d-end">Ends</Label>
+            <Input id="d-end" type="date" value={endsOn} onChange={e => setEndsOn(e.target.value)} />
+          </div>
+        </div>
+
+        {error && (
+          <p role="alert" className="mt-4 text-sm text-destructive">
+            {error}
+          </p>
+        )}
+
+        <div className="mt-5 flex justify-end gap-3 border-t border-border pt-5">
+          <Button
+            onClick={() => { setError(''); create.mutate() }}
+            disabled={create.isPending}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            {create.isPending ? 'Creating…' : 'Create code'}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 /* -------------------------------------------------------------- trailers tab */
 
 function TrailersTab({ data }: { data: AdminData }) {
@@ -307,9 +609,20 @@ function TrailersTab({ data }: { data: AdminData }) {
     ['pending', 'confirmed', 'active'].includes(r.reservation_status.toLowerCase())
   )
 
+  // The fleet table is readable by everyone — that is what lets customers browse
+  // it — so a manager would otherwise see trailers from yards they cannot touch.
+  // Writes are already blocked by policy; this keeps the page honest about scope.
+  const trailers = data.isManager
+    ? data.trailers.filter(trailer => trailer.location_id === data.managerLocationId)
+    : data.trailers
+
+  if (trailers.length === 0) {
+    return <Empty copy="No trailers are assigned to your yard." />
+  }
+
   return (
     <div className="space-y-4">
-      {data.trailers.map(trailer => {
+      {trailers.map(trailer => {
         const reg = registration(trailer.id)
         const onRent = busy.filter(r => r.trailer_id === trailer.id).length
         return (
@@ -383,9 +696,18 @@ function TrailersTab({ data }: { data: AdminData }) {
 
 function LocationsTab({ data }: { data: AdminData }) {
   const save = useSaver()
+  const locations = data.isManager
+    ? data.locations.filter(location => location.id === data.managerLocationId)
+    : data.locations
+
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      {data.locations.map((location: AdminLocation) => {
+      {!data.isAdmin && (
+        <p className="rounded-lg border border-border bg-secondary/40 px-4 py-3 text-sm text-muted-foreground md:col-span-2">
+          Opening and closing a yard is an administrator decision, so these are read-only for you.
+        </p>
+      )}
+      {locations.map((location: AdminLocation) => {
         const trailers = data.trailers.filter(t => t.location_id === location.id)
         const staff = data.profiles.filter(
           p => p.location_id === location.id && STAFF_ROLES.includes(p.role)
@@ -403,6 +725,7 @@ function LocationsTab({ data }: { data: AdminData }) {
                 <Toggle
                   checked={location.is_active}
                   label="Open"
+                  disabled={!data.isAdmin}
                   onChange={value => save('oco_locations', location.id, { is_active: value })}
                 />
               </div>
@@ -640,16 +963,23 @@ function Toggle({
   checked,
   label,
   onChange,
+  disabled = false,
 }: {
   checked: boolean
   label: string
   onChange: (value: boolean) => void
+  disabled?: boolean
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2 text-sm">
+    <label
+      className={`flex items-center gap-2 text-sm ${
+        disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+      }`}
+    >
       <input
         type="checkbox"
         checked={checked}
+        disabled={disabled}
         onChange={event => onChange(event.target.checked)}
         className="h-4 w-4 accent-primary"
       />

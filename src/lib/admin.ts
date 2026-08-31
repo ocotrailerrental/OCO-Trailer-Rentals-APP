@@ -92,6 +92,22 @@ export type AdminPayment = {
   created_at: string
 }
 
+export type AdminDiscount = {
+  id: string
+  code: string
+  description: string | null
+  kind: 'percent' | 'amount'
+  value: number
+  location_id: string | null
+  min_days: number | null
+  starts_on: string | null
+  ends_on: string | null
+  max_uses: number | null
+  times_used: number
+  is_active: boolean
+  created_at: string
+}
+
 export type AdminData = {
   locations: AdminLocation[]
   trailers: AdminTrailer[]
@@ -99,8 +115,13 @@ export type AdminData = {
   profiles: AdminProfile[]
   reservations: AdminReservation[]
   payments: AdminPayment[]
+  discounts: AdminDiscount[]
   isStaff: boolean
   isAdmin: boolean
+  isManager: boolean
+  /** The manager's yard, or null for admins and owners, who are not tied to one. */
+  managerLocationId: string | null
+  role: string
   selfId: string
 }
 
@@ -116,22 +137,28 @@ export async function loadAdminData(): Promise<AdminData> {
 
   const { data: self, error: selfError } = await supabase
     .from('oco_profiles')
-    .select('role')
+    .select('role,location_id')
     .eq('id', selfId)
     .maybeSingle()
   if (selfError) throw selfError
-  const role = ((self as unknown as { role?: string } | null)?.role ?? 'customer').toLowerCase()
+  const selfRow = self as unknown as { role?: string; location_id?: string | null } | null
+  const role = (selfRow?.role ?? 'customer').toLowerCase()
   const isStaff = STAFF_ROLES.includes(role)
   const isAdmin = role === 'admin' || role === 'owner'
+  const isManager = role === 'manager'
+  const managerLocationId = isManager ? (selfRow?.location_id ?? null) : null
 
   if (!isStaff) {
     return {
       locations: [], trailers: [], registrations: [], profiles: [],
-      reservations: [], payments: [], isStaff: false, isAdmin: false, selfId,
+      reservations: [], payments: [], discounts: [],
+      isStaff: false, isAdmin: false, isManager: false,
+      managerLocationId: null, role, selfId,
     }
   }
 
-  const [locations, trailers, registrations, profiles, reservations, payments] = await Promise.all([
+  const [locations, trailers, registrations, profiles, reservations, payments, discounts] =
+    await Promise.all([
     supabase
       .from('oco_locations')
       .select('id,name,slug,city,state,address,timezone,contact_name,contact_phone,is_active')
@@ -162,6 +189,13 @@ export async function loadAdminData(): Promise<AdminData> {
       .from('oco_payments')
       .select('id,reservation_id,customer_id,amount,method,status,provider,paid_at,created_at')
       .order('created_at', { ascending: false }),
+    supabase
+      .from('oco_discounts')
+      .select(
+        'id,code,description,kind,value,location_id,min_days,starts_on,ends_on,' +
+          'max_uses,times_used,is_active,created_at'
+      )
+      .order('created_at', { ascending: false }),
   ])
 
   if (locations.error) throw locations.error
@@ -170,6 +204,7 @@ export async function loadAdminData(): Promise<AdminData> {
   if (profiles.error) throw profiles.error
   if (reservations.error) throw reservations.error
   if (payments.error) throw payments.error
+  if (discounts.error) throw discounts.error
 
   return {
     locations: (locations.data ?? []) as unknown as AdminLocation[],
@@ -178,7 +213,8 @@ export async function loadAdminData(): Promise<AdminData> {
     profiles: (profiles.data ?? []) as unknown as AdminProfile[],
     reservations: (reservations.data ?? []) as unknown as AdminReservation[],
     payments: (payments.data ?? []) as unknown as AdminPayment[],
-    isStaff, isAdmin, selfId,
+    discounts: (discounts.data ?? []) as unknown as AdminDiscount[],
+    isStaff, isAdmin, isManager, managerLocationId, role, selfId,
   }
 }
 
