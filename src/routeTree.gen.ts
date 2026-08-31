@@ -22,6 +22,7 @@ import { Route as AppReservationsRouteImport } from './routes/app/reservations'
 import { Route as AppReservationsReservationIdRouteImport } from './routes/app/reservations.$reservationId'
 import { Route as TrailersSlugRouteImport } from './routes/trailers.$slug'
 import { Route as AppBookRouteImport } from './routes/app/book'
+import { Route as AppAdminRouteImport } from './routes/app/admin'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -73,6 +74,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBookRoute = AppBookRouteImport.update({
   id: '/book',
   path: '/book',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/trailers/$slug': typeof TrailersSlugRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/book': typeof AppBookRoute
   '/app/reservations': typeof AppReservationsRouteWithChildren
   '/app/': typeof AppIndexRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/trailers/$slug': typeof TrailersSlugRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/book': typeof AppBookRoute
   '/app/reservations': typeof AppReservationsRouteWithChildren
   '/app': typeof AppIndexRoute
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/trailers/$slug': typeof TrailersSlugRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/book': typeof AppBookRoute
   '/app/reservations': typeof AppReservationsRouteWithChildren
   '/app/': typeof AppIndexRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/trailers/$slug'
+    | '/app/admin'
     | '/app/book'
     | '/app/reservations'
     | '/app/'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/trailers/$slug'
+    | '/app/admin'
     | '/app/book'
     | '/app/reservations'
     | '/app'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/trailers/$slug'
+    | '/app/admin'
     | '/app/book'
     | '/app/reservations'
     | '/app/'
@@ -266,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/book': {
       id: '/app/book'
       path: '/book'
@@ -303,12 +322,14 @@ const AppReservationsRouteWithChildren = AppReservationsRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
   AppBookRoute: typeof AppBookRoute
   AppReservationsRoute: typeof AppReservationsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
   AppBookRoute: AppBookRoute,
   AppReservationsRoute: AppReservationsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,

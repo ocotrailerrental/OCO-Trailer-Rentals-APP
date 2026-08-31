@@ -25,6 +25,7 @@ import {
   LayoutDashboard,
   ClipboardList,
   CalendarPlus,
+  ShieldCheck,
   LogOut,
   PanelLeft,
 } from 'lucide-react'
@@ -61,6 +62,16 @@ const NAV_ITEMS: NavItemDef[] = [
   { href: '/app/book', icon: <CalendarPlus className="h-4 w-4" />, label: 'Book a trailer' },
   { href: '/app/reservations', icon: <ClipboardList className="h-4 w-4" />, label: 'My Rentals' },
 ]
+
+// Shown only to staff. This is presentation, NOT access control — the admin page
+// and every table behind it are gated by row-level security, so a customer who
+// types the URL gets an empty page either way. Never let a hidden link be the
+// only thing standing between a customer and staff data.
+const STAFF_NAV_ITEMS: NavItemDef[] = [
+  { href: '/app/admin', icon: <ShieldCheck className="h-4 w-4" />, label: 'Admin' },
+]
+
+const STAFF_ROLES = ['manager', 'admin', 'owner']
 
 function NavItem({ item, collapsed, pathname }: { item: NavItemDef; collapsed: boolean; pathname: string }) {
   const active = item.href === '/app'
@@ -106,6 +117,7 @@ export function AppSidebarShell() {
   // The signed-in customer. This used to be hard-coded to "User · user@example.com",
   // which shipped placeholder text into a live account page.
   const [account, setAccount] = useState<{ name: string; email: string } | null>(null)
+  const [isStaff, setIsStaff] = useState(false)
   useEffect(() => {
     let active = true
     void (async () => {
@@ -114,11 +126,13 @@ export function AppSidebarShell() {
       const email = data.user.email ?? ''
       const { data: profile } = await supabase
         .from('oco_profiles')
-        .select('full_name')
+        .select('full_name,role')
         .eq('id', data.user.id)
         .maybeSingle()
       if (!active) return
-      setAccount({ name: profile?.full_name?.trim() || '', email })
+      const row = profile as { full_name?: string | null; role?: string } | null
+      setAccount({ name: row?.full_name?.trim() || '', email })
+      setIsStaff(STAFF_ROLES.includes((row?.role ?? 'customer').toLowerCase()))
     })()
     return () => { active = false }
   }, [])
@@ -189,6 +203,19 @@ export function AppSidebarShell() {
           {NAV_ITEMS.map(item => (
             <NavItem key={item.href} item={item} collapsed={collapsed} pathname={pathname} />
           ))}
+
+          {isStaff && (
+            <>
+              {!collapsed && (
+                <p className="px-3 pb-1 pt-4 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Staff
+                </p>
+              )}
+              {STAFF_NAV_ITEMS.map(item => (
+                <NavItem key={item.href} item={item} collapsed={collapsed} pathname={pathname} />
+              ))}
+            </>
+          )}
         </div>
 
         {/* ── Footer (always pinned to bottom) ──────────── */}
