@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   ArrowLeft,
@@ -9,6 +10,9 @@ import {
   MapPin,
   Truck,
 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TrailerImage } from '@/components/TrailerImage'
 import { Payment, Reservation, formatDate, formatMoney, localDateString } from '@/lib/booking'
@@ -38,9 +42,49 @@ type DetailData = {
 
 function ReservationDetailPage() {
   const { reservationId } = Route.useParams()
+  const queryClient = useQueryClient()
   const query = useQuery({
     queryKey: ['customer-reservation', reservationId],
     queryFn: () => loadReservation(reservationId),
+  })
+
+  // Whether this customer has supplied licence and insurance yet. Kept separate
+  // from the reservation load so a permission hiccup here cannot blank the page.
+  const documentsQuery = useQuery({
+    queryKey: ['my-documents-status'],
+    queryFn: async () => {
+      const { data: authData } = await supabase.auth.getUser()
+      const profileId = authData.user?.id
+      if (!profileId) return { ready: false }
+      const { data } = await supabase
+        .from('oco_customer_verification')
+        .select('license_expiry,insurance_type')
+        .eq('profile_id', profileId)
+        .maybeSingle()
+      const row = data as { license_expiry?: string | null; insurance_type?: string | null } | null
+      return { ready: Boolean(row?.license_expiry && row?.insurance_type) }
+    },
+  })
+
+  const [showCancel, setShowCancel] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelError, setCancelError] = useState('')
+
+  const cancel = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('oco_cancel_reservation', {
+        p_reservation_id: reservationId,
+        p_reason: cancelReason.trim() || null,
+      })
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: () => {
+      setShowCancel(false)
+      void queryClient.invalidateQueries({ queryKey: ['customer-reservation', reservationId] })
+      void queryClient.invalidateQueries({ queryKey: ['customer-reservations'] })
+    },
+    onError: e =>
+      setCancelError(e instanceof Error ? e.message : 'The reservation was not cancelled.'),
   })
 
   if (query.isLoading) {
@@ -115,6 +159,90 @@ function ReservationDetailPage() {
         <p className="rounded-lg border border-border bg-secondary/40 px-4 py-3 text-sm text-muted-foreground">
           {status.hint}
         </p>
+      )}
+
+      {documentsQuery.data && !documentsQuery.data.ready &&
+        ['pending', 'confirmed'].includes(reservation.reservation_status.toLowerCase()) && (
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+            <p className="text-sm">
+              <strong className="font-semibold">One thing left.</strong> We still need your driving
+              licence and insurance before you can collect.
+            </p>
+            <Link
+              to="/app/documents"
+              className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary hover:underline"
+            >
+              Add them now <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        )}
+
+      {['pending', 'confirmed'].includes(reservation.reservation_status.toLowerCase()) && (
+        <Card>
+          <CardContent className="space-y-3 p-5">
+            {!showCancel ? (
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium">Need to cancel?</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    You can cancel while the rental has not started. The trailer goes straight back
+                    into availability for those dates.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setCancelError('')
+                    setShowCancel(true)
+                  }}
+                  className="border-destructive/40 bg-transparent text-destructive hover:bg-destructive/10"
+                >
+                  Cancel this rental
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm font-medium">
+                  Cancel {reservation.reservation_number}? The record is kept, marked cancelled — it
+                  is not deleted.
+                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="cancel-reason">Reason (optional)</Label>
+                  <Input
+                    id="cancel-reason"
+                    value={cancelReason}
+                    onChange={event => setCancelReason(event.target.value)}
+                    placeholder="Plans changed"
+                  />
+                </div>
+                {cancelError && (
+                  <p role="alert" className="text-sm text-destructive">
+                    {cancelError}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    disabled={cancel.isPending}
+                    onClick={() => {
+                      setCancelError('')
+                      cancel.mutate()
+                    }}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {cancel.isPending ? 'Cancelling…' : 'Yes, cancel it'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCancel(false)}
+                    className="bg-transparent"
+                  >
+                    Keep the rental
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">

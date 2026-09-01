@@ -260,7 +260,7 @@ function Notice({ title, copy }: { title: string; copy: string }) {
 
 async function loadTrailer(slug: string): Promise<DetailData | null> {
   const { data, error } = await supabase
-    .from('oco_trailers')
+    .from('oco_available_trailers')
     .select(TRAILER_COLUMNS)
     .eq('slug', slug)
     .eq('is_active', true)

@@ -25,6 +25,7 @@ import {
   LayoutDashboard,
   ClipboardList,
   CalendarPlus,
+  IdCard,
   ShieldCheck,
   LogOut,
   PanelLeft,
@@ -61,6 +62,7 @@ const NAV_ITEMS: NavItemDef[] = [
   { href: '/app', icon: <LayoutDashboard className="h-4 w-4" />, label: 'Dashboard' },
   { href: '/app/book', icon: <CalendarPlus className="h-4 w-4" />, label: 'Book a trailer' },
   { href: '/app/reservations', icon: <ClipboardList className="h-4 w-4" />, label: 'My Rentals' },
+  { href: '/app/documents', icon: <IdCard className="h-4 w-4" />, label: 'Licence & insurance' },
 ]
 
 // Shown only to staff. This is presentation, NOT access control — the admin page

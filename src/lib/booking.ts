@@ -1,3 +1,5 @@
+import { supabase } from '@/lib/supabase'
+
 export type Location = {
   id: string
   name: string
@@ -221,4 +223,80 @@ export function formatMoney(value: number | string | null | undefined) {
 export function formatDate(value: string) {
   if (!value) return '—'
   return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${value}T12:00:00Z`))
+}
+
+/* ------------------------------------------------------------------ quoting */
+
+/**
+ * The authoritative quote, straight from the database.
+ *
+ * Pricing used to be implemented twice — once in SQL for what the customer is
+ * charged, once here in TypeScript for what the page displays. Adding sales tax
+ * to one and not the other made the booking page promise $620 while the database
+ * charged $661.60. Two implementations of one rule drift; there is now one
+ * implementation, `oco_price_reservation`, and this asks it.
+ *
+ * `rentalEstimate` below is kept only for an instant local approximation while
+ * the quote is in flight. It must never be the number a customer acts on.
+ */
+export type Quote = {
+  days: number
+  pre_discount_subtotal: number
+  discount_id: string | null
+  discount_code: string | null
+  discount_amount: number
+  /** Set when a code was typed but does not apply. The rest of the quote is still valid. */
+  discount_error: string | null
+  rental_subtotal: number
+  delivery_fee: number
+  taxable_amount: number
+  tax_rate: number
+  taxes: number
+  security_deposit: number
+  /** Rental, delivery and tax — what the rental actually costs. */
+  due_now: number
+  /** due_now plus the refundable deposit. */
+  total: number
+}
+
+export async function fetchQuote(params: {
+  trailerId: string
+  pickupLocationId: string
+  returnLocationId: string
+  startDate: string
+  endDate: string
+  pickupMethod: string
+  deliveryMiles?: number
+  discountCode?: string | null
+}): Promise<Quote> {
+  const { data, error } = await supabase.rpc('oco_quote_reservation', {
+    p_trailer_id: params.trailerId,
+    p_pickup_location_id: params.pickupLocationId,
+    p_return_location_id: params.returnLocationId,
+    p_start_date: params.startDate,
+    p_end_date: params.endDate,
+    p_pickup_method: params.pickupMethod,
+    p_delivery_miles: params.deliveryMiles ?? 0,
+    p_discount_code: params.discountCode?.trim() || null,
+  })
+  if (error) throw error
+  const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | undefined
+  if (!row) throw new Error('We could not price this rental. Please try again.')
+  const n = (v: unknown) => Number(v) || 0
+  return {
+    days: n(row.days),
+    pre_discount_subtotal: n(row.pre_discount_subtotal),
+    discount_id: (row.discount_id as string | null) ?? null,
+    discount_code: (row.discount_code as string | null) ?? null,
+    discount_amount: n(row.discount_amount),
+    discount_error: (row.discount_error as string | null) ?? null,
+    rental_subtotal: n(row.rental_subtotal),
+    delivery_fee: n(row.delivery_fee),
+    taxable_amount: n(row.taxable_amount),
+    tax_rate: n(row.tax_rate),
+    taxes: n(row.taxes),
+    security_deposit: n(row.security_deposit),
+    due_now: n(row.due_now),
+    total: n(row.total),
+  }
 }

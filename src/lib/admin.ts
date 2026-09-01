@@ -65,20 +65,109 @@ export type AdminReservation = {
   customer_id: string
   customer_name: string
   customer_email: string
+  customer_phone: string | null
   trailer_id: string
   pickup_location_id: string
+  return_location_id: string
   start_date: string
   end_date: string
-  rental_subtotal: number
+  pickup_method: string
+  delivery_address: string | null
+  delivery_miles: number
   delivery_fee: number
+  pre_discount_subtotal: number
+  discount_code: string | null
+  discount_amount: number
+  rental_subtotal: number
   security_deposit: number
   taxes: number
+  tax_rate: number
   total: number
   payment_method: string
   payment_status: string
   reservation_status: string
+  customer_notes: string | null
+  staff_notes: string | null
+  created_at: string
+  due_back_at: string | null
+  picked_up_at: string | null
+  returned_at: string | null
+  late_fee_amount: number
+  /** Null means the customer booked before the agreement existed, or acceptance failed to record. */
+  agreement_id: string | null
+  agreement_accepted_at: string | null
+  agreement_accepted_name: string | null
+  approved_at: string | null
+  approved_by: string | null
+  declined_at: string | null
+  declined_by: string | null
+  decline_reason: string | null
+}
+
+/** Renter documents, shown to staff on the approval panel. Staff-only by policy. */
+export type AdminVerification = {
+  profile_id: string
+  date_of_birth: string | null
+  license_state: string | null
+  license_last4: string | null
+  license_expiry: string | null
+  license_photo_path: string | null
+  insurance_type: string | null
+  insurer_name: string | null
+  policy_number: string | null
+  policy_expiry: string | null
+  insurance_doc_path: string | null
+  coverage_label: string | null
+  submitted_at: string | null
+  verified_at: string | null
+  verified_by: string | null
+}
+
+/** One inspection record with its photos, for the review panel. */
+export type AdminInspection = {
+  id: string
+  reservation_id: string
+  trailer_id: string
+  customer_id: string
+  inspection_type: string
+  condition_status: string
+  notes: string | null
+  completed_at: string | null
+  created_at: string
+  photo_count: number
+}
+
+export type AdminInspectionPhoto = {
+  id: string
+  inspection_id: string
+  storage_path: string
+  photo_category: string
+  notes: string | null
   created_at: string
 }
+
+/**
+ * The views an inspection must photograph before it can be marked complete.
+ *
+ * This list is not a suggestion: `oco_enforce_required_inspection_photos` refuses
+ * to complete an inspection with any of them missing, so the interface and the
+ * database must agree exactly. Change one and change the other.
+ */
+export const REQUIRED_PHOTO_VIEWS = [
+  { key: 'front', label: 'Front' },
+  { key: 'rear', label: 'Rear' },
+  { key: 'driver_side', label: 'Driver side' },
+  { key: 'passenger_side', label: 'Passenger side' },
+  { key: 'deck', label: 'Deck' },
+  { key: 'hitch', label: 'Hitch and coupler' },
+  { key: 'tires', label: 'Tires' },
+] as const
+
+/** Extra views staff may add. Never required, so damage can be recorded freely. */
+export const OPTIONAL_PHOTO_VIEWS = [
+  { key: 'damage', label: 'Damage' },
+  { key: 'other', label: 'Other' },
+] as const
 
 export type AdminPayment = {
   id: string
@@ -116,6 +205,9 @@ export type AdminData = {
   reservations: AdminReservation[]
   payments: AdminPayment[]
   discounts: AdminDiscount[]
+  verifications: AdminVerification[]
+  inspections: AdminInspection[]
+  inspectionPhotos: AdminInspectionPhoto[]
   isStaff: boolean
   isAdmin: boolean
   isManager: boolean
@@ -151,13 +243,15 @@ export async function loadAdminData(): Promise<AdminData> {
   if (!isStaff) {
     return {
       locations: [], trailers: [], registrations: [], profiles: [],
-      reservations: [], payments: [], discounts: [],
+      reservations: [], payments: [], discounts: [], verifications: [], inspections: [],
+      inspectionPhotos: [],
       isStaff: false, isAdmin: false, isManager: false,
       managerLocationId: null, role, selfId,
     }
   }
 
-  const [locations, trailers, registrations, profiles, reservations, payments, discounts] =
+  const [locations, trailers, registrations, profiles, reservations, payments, discounts,
+         verifications, inspections, inspectionPhotos] =
     await Promise.all([
     supabase
       .from('oco_locations')
@@ -180,9 +274,13 @@ export async function loadAdminData(): Promise<AdminData> {
     supabase
       .from('oco_reservations')
       .select(
-        'id,reservation_number,customer_id,customer_name,customer_email,trailer_id,' +
-          'pickup_location_id,start_date,end_date,rental_subtotal,delivery_fee,security_deposit,' +
-          'taxes,total,payment_method,payment_status,reservation_status,created_at'
+        'id,reservation_number,customer_id,customer_name,customer_email,customer_phone,trailer_id,' +
+          'pickup_location_id,return_location_id,start_date,end_date,pickup_method,delivery_address,' +
+          'delivery_miles,delivery_fee,pre_discount_subtotal,discount_code,discount_amount,' +
+          'rental_subtotal,security_deposit,taxes,tax_rate,total,payment_method,payment_status,' +
+          'reservation_status,customer_notes,staff_notes,created_at,due_back_at,picked_up_at,' +
+          'returned_at,late_fee_amount,agreement_id,agreement_accepted_at,agreement_accepted_name,' +
+          'approved_at,approved_by,declined_at,declined_by,decline_reason'
       )
       .order('start_date', { ascending: false }),
     supabase
@@ -196,6 +294,24 @@ export async function loadAdminData(): Promise<AdminData> {
           'max_uses,times_used,is_active,created_at'
       )
       .order('created_at', { ascending: false }),
+    supabase
+      .from('oco_customer_verification')
+      .select(
+        'profile_id,date_of_birth,license_state,license_last4,license_expiry,license_photo_path,' +
+          'insurance_type,insurer_name,policy_number,policy_expiry,insurance_doc_path,' +
+          'coverage_label,submitted_at,verified_at,verified_by'
+      ),
+    supabase
+      .from('oco_inspections')
+      .select(
+        'id,reservation_id,trailer_id,customer_id,inspection_type,condition_status,notes,' +
+          'completed_at,created_at'
+      )
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('oco_inspection_photos')
+      .select('id,inspection_id,storage_path,photo_category,notes,created_at')
+      .order('created_at'),
   ])
 
   if (locations.error) throw locations.error
@@ -205,6 +321,18 @@ export async function loadAdminData(): Promise<AdminData> {
   if (reservations.error) throw reservations.error
   if (payments.error) throw payments.error
   if (discounts.error) throw discounts.error
+  // These two are additive to the console. A permission or migration problem on
+  // them must not blank the whole page, so they degrade to empty instead.
+  const verificationRows = verifications.error ? [] : (verifications.data ?? [])
+  const inspectionRows = inspections.error ? [] : (inspections.data ?? [])
+  const photoRows = (
+    inspectionPhotos.error ? [] : (inspectionPhotos.data ?? [])
+  ) as unknown as AdminInspectionPhoto[]
+
+  const photoCounts = new Map<string, number>()
+  for (const photo of photoRows) {
+    photoCounts.set(photo.inspection_id, (photoCounts.get(photo.inspection_id) ?? 0) + 1)
+  }
 
   return {
     locations: (locations.data ?? []) as unknown as AdminLocation[],
@@ -214,6 +342,12 @@ export async function loadAdminData(): Promise<AdminData> {
     reservations: (reservations.data ?? []) as unknown as AdminReservation[],
     payments: (payments.data ?? []) as unknown as AdminPayment[],
     discounts: (discounts.data ?? []) as unknown as AdminDiscount[],
+    verifications: verificationRows as unknown as AdminVerification[],
+    inspections: (inspectionRows as unknown as Omit<AdminInspection, 'photo_count'>[]).map(item => ({
+      ...item,
+      photo_count: photoCounts.get(item.id) ?? 0,
+    })),
+    inspectionPhotos: photoRows,
     isStaff, isAdmin, isManager, managerLocationId, role, selfId,
   }
 }

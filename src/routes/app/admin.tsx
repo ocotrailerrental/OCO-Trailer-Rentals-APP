@@ -4,8 +4,10 @@ import { useState } from 'react'
 import {
   Banknote,
   Building2,
+  CalendarClock,
   CircleAlert,
   CreditCard,
+  Inbox,
   Percent,
   ShieldCheck,
   Tag,
@@ -19,6 +21,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { TrailerImage } from '@/components/TrailerImage'
+import { ReservationReview } from '@/components/ReservationReview'
 import { formatDate, formatMoney } from '@/lib/booking'
 import { statusClass, statusInfo } from '@/lib/reservation-status'
 import {
@@ -27,6 +30,7 @@ import {
   AdminDiscount,
   AdminLocation,
   AdminProfile,
+  AdminReservation,
   STAFF_ROLES,
   loadAdminData,
   outstandingRows,
@@ -34,7 +38,7 @@ import {
 } from '@/lib/admin'
 import { supabase } from '@/lib/supabase'
 
-const TABS = ['finance', 'trailers', 'discounts', 'locations', 'team'] as const
+const TABS = ['reservations', 'finance', 'trailers', 'discounts', 'locations', 'team'] as const
 type Tab = (typeof TABS)[number]
 
 // Exactly the values `oco_trailers_status_check` allows. Offering anything else
@@ -47,7 +51,7 @@ type EditableTable = 'oco_trailers' | 'oco_locations' | 'oco_profiles'
 
 export const Route = createFileRoute('/app/admin')({
   validateSearch: (search: Record<string, unknown>) => ({
-    tab: (TABS as readonly string[]).includes(String(search.tab)) ? (search.tab as Tab) : 'finance',
+    tab: (TABS as readonly string[]).includes(String(search.tab)) ? (search.tab as Tab) : 'reservations',
   }),
   head: () => ({ meta: [{ title: 'Admin · OCO Trailer Rentals' }] }),
   component: AdminConsole,
@@ -160,11 +164,187 @@ function AdminConsole() {
         ))}
       </div>
 
+      {tab === 'reservations' && <ReservationsTab data={data} />}
       {tab === 'finance' && <FinanceTab data={data} />}
       {tab === 'trailers' && <TrailersTab data={data} />}
       {tab === 'discounts' && <DiscountsTab data={data} />}
       {tab === 'locations' && <LocationsTab data={data} />}
       {tab === 'team' && <TeamTab data={data} />}
+    </div>
+  )
+}
+
+/* ---------------------------------------------------------- reservations tab */
+
+/**
+ * Filters, in the order a yard actually works through the day. "Needs approval"
+ * is first and is the default, because a booking sitting in `pending` is the one
+ * state where the business is holding a customer up.
+ */
+const RESERVATION_FILTERS = [
+  { key: 'pending', label: 'Needs approval', statuses: ['pending'] },
+  { key: 'confirmed', label: 'Approved', statuses: ['confirmed'] },
+  { key: 'active', label: 'Out now', statuses: ['active'] },
+  { key: 'finished', label: 'Finished', statuses: ['completed', 'cancelled', 'declined'] },
+  { key: 'all', label: 'Everything', statuses: [] as string[] },
+] as const
+
+type FilterKey = (typeof RESERVATION_FILTERS)[number]['key']
+
+function ReservationsTab({ data }: { data: AdminData }) {
+  const [filter, setFilter] = useState<FilterKey>('pending')
+  const [openId, setOpenId] = useState<string | null>(null)
+
+  // Row-level security already scopes a manager to their own yard. This repeats
+  // the rule in the interface so the counts on the filter chips are honest rather
+  // than counting rows the manager cannot open.
+  const scoped = data.isManager
+    ? data.reservations.filter(item => item.pickup_location_id === data.managerLocationId)
+    : data.reservations
+
+  const countFor = (key: FilterKey) => {
+    const entry = RESERVATION_FILTERS.find(item => item.key === key)!
+    if (entry.statuses.length === 0) return scoped.length
+    return scoped.filter(item =>
+      (entry.statuses as readonly string[]).includes(item.reservation_status.toLowerCase())
+    ).length
+  }
+
+  const active = RESERVATION_FILTERS.find(item => item.key === filter)!
+  const rows = (
+    active.statuses.length === 0
+      ? scoped
+      : scoped.filter(item =>
+          (active.statuses as readonly string[]).includes(item.reservation_status.toLowerCase())
+        )
+  )
+    .slice()
+    // Soonest pickup first: a rental starting tomorrow needs attention before one
+    // starting next month, whatever order they were booked in.
+    .sort((a, b) => a.start_date.localeCompare(b.start_date))
+
+  const open = openId ? scoped.find(item => item.id === openId) ?? null : null
+  const trailerName = (id: string) => data.trailers.find(item => item.id === id)?.name ?? 'Trailer'
+  const cityName = (id: string) => data.locations.find(item => item.id === id)?.city ?? 'Unknown yard'
+  const pendingCount = countFor('pending')
+
+  if (open) {
+    return <ReservationReview reservation={open} data={data} onClose={() => setOpenId(null)} />
+  }
+
+  return (
+    <div className="space-y-5">
+      {pendingCount > 0 && filter !== 'pending' && (
+        <button
+          type="button"
+          onClick={() => setFilter('pending')}
+          className="flex w-full items-center gap-2.5 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-left text-sm transition-colors hover:bg-primary/10"
+        >
+          <Inbox className="h-4 w-4 shrink-0 text-primary" />
+          <span>
+            <strong className="font-semibold">
+              {pendingCount} booking{pendingCount === 1 ? '' : 's'} waiting on you.
+            </strong>{' '}
+            Nothing can be collected until it is approved.
+          </span>
+        </button>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        {RESERVATION_FILTERS.map(item => {
+          const count = countFor(item.key)
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setFilter(item.key)}
+              className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                filter === item.key
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-background text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {item.label}
+              <span className="ml-1.5 tabular-nums opacity-70">{count}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      {rows.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="p-8 text-center">
+            <CalendarClock className="mx-auto h-8 w-8 text-muted-foreground/50" />
+            <p className="mt-3 text-sm text-muted-foreground">
+              {filter === 'pending'
+                ? 'Nothing is waiting for approval. Every booking has been dealt with.'
+                : 'No reservations in this list.'}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {rows.map((reservation: AdminReservation) => {
+            const status = reservation.reservation_status.toLowerCase()
+            const needsAgreement = !reservation.agreement_accepted_at
+            const hasDocuments = data.verifications.some(
+              item => item.profile_id === reservation.customer_id
+            )
+            return (
+              <Card key={reservation.id}>
+                <CardContent className="flex flex-wrap items-start justify-between gap-4 p-5">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <span className="font-mono text-sm font-semibold">
+                        {reservation.reservation_number}
+                      </span>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${statusClass(
+                          status
+                        )}`}
+                      >
+                        {statusInfo(status).label}
+                      </span>
+                      {status === 'pending' && needsAgreement && (
+                        <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                          No agreement
+                        </span>
+                      )}
+                      {status === 'pending' && !hasDocuments && (
+                        <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                          No licence
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="mt-2 font-serif text-xl">{reservation.customer_name}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {trailerName(reservation.trailer_id)} · {cityName(reservation.pickup_location_id)}
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {formatDate(reservation.start_date)} – {formatDate(reservation.end_date)}
+                      {reservation.pickup_method === 'delivery' ? ' · Delivery' : ''}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2.5">
+                    <span className="font-serif text-2xl tabular-nums">
+                      {formatMoney(reservation.total)}
+                    </span>
+                    <span className="text-xs capitalize text-muted-foreground">
+                      {reservation.payment_method} · {reservation.payment_status}
+                    </span>
+                    <Button
+                      onClick={() => setOpenId(reservation.id)}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      {status === 'pending' ? 'Review and confirm' : 'Open'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -352,12 +532,10 @@ function DiscountsTab({ data }: { data: AdminData }) {
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-border bg-secondary/40 px-4 py-3 text-sm text-muted-foreground">
-        <strong className="font-medium text-foreground">
-          These codes are not applied at checkout yet.
-        </strong>{' '}
-        You can create and manage them here, but the booking calculation does not read this table,
-        so a customer entering a code today would still pay full price. Wiring it into pricing
-        changes what people are charged, so say the word and it gets done deliberately.
+        <strong className="font-medium text-foreground">These codes are live at checkout.</strong>{' '}
+        A customer typing one on the booking page sees the price drop straight away, and the same
+        rule is applied again when the booking is created — so switching a code off here stops it
+        being used immediately.
       </div>
 
       <div className="flex items-center justify-between gap-4">

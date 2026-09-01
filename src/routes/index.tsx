@@ -29,7 +29,7 @@ function HomeContent() {
     setIsHydrated(true)
   }, [])
   const locationsQuery = useQuery({ queryKey: ['public-locations'], enabled: isHydrated, queryFn: async () => { const { data, error } = await supabase.from('oco_locations').select('id,name,city,state,timezone').eq('is_active', true).order('name'); if (error) throw error; return (data ?? []) as Location[] } })
-  const trailersQuery = useQuery({ queryKey: ['public-trailers'], enabled: isHydrated, queryFn: async () => { const { data, error } = await supabase.from('oco_trailers').select(TRAILER_COLUMNS).eq('is_active', true).order('name'); if (error) throw error; return (data ?? []) as unknown as Trailer[] } })
+  const trailersQuery = useQuery({ queryKey: ['public-trailers'], enabled: isHydrated, queryFn: async () => { const { data, error } = await supabase.from('oco_available_trailers').select(TRAILER_COLUMNS).eq('is_active', true).order('name'); if (error) throw error; return (data ?? []) as unknown as Trailer[] } })
   const locations = locationsQuery.data ?? EMPTY_LOCATIONS
   // Rates come from the fleet, never from a number typed into the page. An empty
   // or still-loading fleet shows nothing rather than a stale figure.

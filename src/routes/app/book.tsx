@@ -38,7 +38,7 @@ function PortalBookingPage() {
     queryKey: ['public-trailers'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('oco_trailers')
+        .from('oco_available_trailers')
         .select(TRAILER_COLUMNS)
         .eq('is_active', true)
         .order('name')
