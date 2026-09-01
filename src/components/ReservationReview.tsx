@@ -51,10 +51,13 @@ export function ReservationReview({
   const inspections = data.inspections.filter(item => item.reservation_id === reservation.id)
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-console'] })
-  const runRpc = (fn: string, args: Record<string, unknown>) =>
-    supabase.rpc(fn, args).then(({ error: rpcError }) => {
-      if (rpcError) throw new Error(rpcError.message)
-    })
+  // `supabase.rpc(...)` returns a thenable builder, not a real Promise, which
+  // TanStack Query's MutationFunction type will not accept. Awaiting it inside an
+  // async function produces the Promise the type actually requires.
+  const runRpc = async (fn: string, args: Record<string, unknown>) => {
+    const { error: rpcError } = await supabase.rpc(fn, args)
+    if (rpcError) throw new Error(rpcError.message)
+  }
 
   const approve = useMutation({
     mutationFn: () => runRpc('oco_approve_reservation', { p_reservation_id: reservation.id }),
@@ -428,6 +431,7 @@ function DocumentLink({ path, label }: { path: string | null; label: string }) {
         .from('oco-inspection-photos')
         .createSignedUrl(path as string, 300)
       if (error) throw error
+      if (!data?.signedUrl) throw new Error('That document could not be opened.')
       return data.signedUrl
     },
   })
