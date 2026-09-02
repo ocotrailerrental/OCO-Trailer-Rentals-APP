@@ -73,11 +73,13 @@ function DashboardHome() {
   // object, re-ran the effect, and overwrote whatever the customer was halfway
   // through typing. Switch to another tab to copy your new phone number across,
   // come back, and your typing was gone with no message.
+  // Keyed on the account's email, which is the one stable identifier this query
+  // returns and does not change under a signed-in customer.
   const [loadedFor, setLoadedFor] = useState<string | null>(null)
-  if (data?.profile && loadedFor !== data.profile.id) {
-    setLoadedFor(data.profile.id)
-    setFullName(data.profile.full_name ?? '')
-    setPhone(data.profile.phone ?? '')
+  if (data && loadedFor !== data.email) {
+    setLoadedFor(data.email)
+    setFullName(data.profile?.full_name ?? '')
+    setPhone(data.profile?.phone ?? '')
   }
 
   if (dashboardQuery.isLoading) {
