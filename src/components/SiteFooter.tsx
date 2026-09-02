@@ -88,22 +88,13 @@ export function SiteFooter() {
                     Locations
                   </a>
                 </li>
-                <li>
-                  <a
-                    href="https://ocotrailerrentals.com"
-                    className="hover:text-sidebar-foreground"
-                    rel="noreferrer"
-                  >
-                    ocotrailerrentals.com
-                  </a>
-                </li>
               </ul>
             </div>
           </div>
         </div>
 
         <div className="mt-10 flex flex-col gap-3 border-t border-sidebar-foreground/10 pt-6 text-xs text-sidebar-foreground/45 sm:flex-row sm:items-center sm:justify-between">
-          <p>&copy; {year} OCO Trailer Rental. All rights reserved.</p>
+          <p>&copy; {year} OCO Trailer Rentals. All rights reserved.</p>
           <p>
             By providing your information on this website you agree to our{' '}
             <a href="/terms" className="underline hover:text-sidebar-foreground">

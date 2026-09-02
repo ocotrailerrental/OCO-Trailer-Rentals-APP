@@ -11,7 +11,7 @@ export const Route = createFileRoute('/privacy')({
       {
         name: 'description',
         content:
-          'How OCO Trailer Rental collects, uses, shares and protects personal information.',
+          'How OCO Trailer Rentals collects, uses, shares and protects personal information.',
       },
     ],
   }),
@@ -37,7 +37,7 @@ const SECTIONS: Section[] = [
       {
         kind: 'text',
         text:
-          'OCO Trailer Rental provides trailer rental services, including rental management, operational tools, and customer support (collectively, “Services”). When you interact with our website (ocotrailerrentals.com) or conduct business with us, we act as the data controller of the Personal Information collected and process it according to this Privacy Policy.',
+          'OCO Trailer Rentals provides trailer rental services, including rental management, operational tools, and customer support (collectively, “Services”). When you interact with our website or conduct business with us, we act as the data controller of the Personal Information collected and process it according to this Privacy Policy.',
       },
     ],
   },
@@ -47,7 +47,7 @@ const SECTIONS: Section[] = [
       {
         kind: 'text',
         text:
-          'The type of information we collect depends on your interactions with us. We gather information when you visit our website (ocotrailerrentals.com) or engage in business transactions with us.',
+          'The type of information we collect depends on your interactions with us. We gather information when you visit our website or engage in business transactions with us.',
       },
       { kind: 'label', text: '1.1 Information Collected Through Our Website' },
       {
@@ -69,7 +69,7 @@ const SECTIONS: Section[] = [
           },
           {
             term: 'Commercial Information',
-            text: 'Details related to transactions, such as payment information, provided voluntarily.',
+            text: 'Details related to transactions, such as payment information. Card details are entered directly with our payment processor and are never stored on OCO systems.',
           },
         ],
       },
@@ -82,7 +82,7 @@ const SECTIONS: Section[] = [
       {
         kind: 'text',
         text:
-          'When conducting business directly with OCO Trailer Rental, we may collect additional Personal Information such as:',
+          'When conducting business directly with OCO Trailer Rentals, we may collect additional Personal Information such as:',
       },
       {
         kind: 'bullets',
@@ -90,7 +90,7 @@ const SECTIONS: Section[] = [
           { term: 'Identifiers', text: 'Name, company name, and business contact details.' },
           {
             term: 'Payment Information',
-            text: 'Credit or debit card details provided voluntarily for payment processing.',
+            text: 'Card details for payment, handled entirely by our payment processor. OCO stores only the card type and its last four digits.',
           },
         ],
       },
@@ -202,7 +202,7 @@ const SECTIONS: Section[] = [
       {
         kind: 'text',
         text:
-          'Our services are not intended for individuals under the age of 16. If we learn we have collected Personal Information from a minor, we will delete it promptly. Renting a trailer from OCO has its own, higher age requirement, which is set out in the rental agreement.',
+          'Our services are not intended for individuals under the age of 16. If we learn we have collected Personal Information from a minor, we will delete it promptly. Renting a trailer requires you to be 18 or over, as set out in the rental agreement.',
       },
     ],
   },
@@ -232,7 +232,7 @@ const SECTIONS: Section[] = [
       {
         kind: 'text',
         text:
-          'By providing your phone number to OCO Trailer Rental, you consent to receive calls and text messages from us, including messages sent by automated systems, related to your trailer rental inquiries and transactions. Message and data rates may apply. You can opt out of receiving messages at any time by contacting us at Robert@OCOTrailerRentals.com.',
+          'By providing your phone number to OCO Trailer Rentals, you consent to receive calls and text messages from us, including messages sent by automated systems, related to your trailer rental inquiries and transactions. Message and data rates may apply. You can opt out of receiving messages at any time by contacting us at Robert@OCOTrailerRentals.com.',
       },
     ],
   },
@@ -269,7 +269,7 @@ function PrivacyPage() {
         <p className="mt-3 text-sm text-muted-foreground">Last Updated: 9-1-2026</p>
 
         <p className="mt-8 leading-7">
-          OCO Trailer Rental, headquartered at 13633 41st Division Drive, Joint Base Lewis-McChord,
+          OCO Trailer Rentals, headquartered at 13633 41st Division Drive, Joint Base Lewis-McChord,
           WA 98433 (&ldquo;Company,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;),
           is committed to safeguarding the privacy of the Personal Information and data we handle in
           our business operations and the provision of our services. This Privacy Policy &amp; Notice

@@ -95,6 +95,10 @@ export type AdminReservation = {
   late_fee_amount: number
   no_show_fee_amount: number
   no_show_at: string | null
+  deposit_hold_id: string | null
+  deposit_hold_status: string | null
+  rental_charge_id: string | null
+  rental_charge_status: string | null
   /** Null means the customer booked before the agreement existed, or acceptance failed to record. */
   agreement_id: string | null
   agreement_accepted_at: string | null
@@ -282,6 +286,7 @@ export async function loadAdminData(): Promise<AdminData> {
           'rental_subtotal,security_deposit,taxes,tax_rate,total,payment_method,payment_status,' +
           'reservation_status,customer_notes,staff_notes,created_at,due_back_at,picked_up_at,' +
           'returned_at,late_fee_amount,no_show_fee_amount,no_show_at,' +
+          'deposit_hold_id,deposit_hold_status,rental_charge_id,rental_charge_status,' +
           'agreement_id,agreement_accepted_at,agreement_accepted_name,' +
           'approved_at,approved_by,declined_at,declined_by,decline_reason'
       )

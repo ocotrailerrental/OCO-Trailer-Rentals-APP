@@ -11,7 +11,7 @@ export const Route = createFileRoute('/terms')({
       {
         name: 'description',
         content:
-          'The terms and conditions covering information submitted through the OCO Trailer Rental website.',
+          'The terms and conditions covering information submitted through the OCO Trailer Rentals website.',
       },
     ],
   }),
@@ -104,7 +104,7 @@ function TermsPage() {
         <p className="mt-3 text-sm text-muted-foreground">Last Updated: 9-1-2026</p>
 
         <p className="mt-8 leading-7">
-          Welcome to OCO Trailer Rental (&ldquo;Company,&rdquo; &ldquo;we,&rdquo;
+          Welcome to OCO Trailer Rentals (&ldquo;Company,&rdquo; &ldquo;we,&rdquo;
           &ldquo;our,&rdquo; or &ldquo;us&rdquo;). By using our website and providing your
           information, you (the &ldquo;User&rdquo;) agree to the following terms and conditions.
           These terms are designed to inform you of how your information will be used for lead
@@ -147,15 +147,6 @@ function TermsPage() {
               </li>
               <li className="text-muted-foreground">
                 13633 41st Division Drive, Joint Base Lewis-McChord, WA 98433
-              </li>
-              <li>
-                <a
-                  href="https://ocotrailerrentals.com"
-                  rel="noreferrer"
-                  className="font-semibold text-primary hover:underline"
-                >
-                  ocotrailerrentals.com
-                </a>
               </li>
             </ul>
           </section>

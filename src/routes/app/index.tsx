@@ -66,13 +66,19 @@ function DashboardHome() {
   })
 
   const data = dashboardQuery.data
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronize editable fields after the profile query resolves
-  useEffect(() => {
-    if (data?.profile) {
-      setFullName(data.profile.full_name ?? '')
-      setPhone(data.profile.phone ?? '')
-    }
-  }, [data?.profile])
+  // Fill the form from the stored profile ONCE, keyed on the account id.
+  //
+  // This used to depend on the profile object itself. Every background refetch —
+  // and the query refetches whenever the window regains focus — produced a new
+  // object, re-ran the effect, and overwrote whatever the customer was halfway
+  // through typing. Switch to another tab to copy your new phone number across,
+  // come back, and your typing was gone with no message.
+  const [loadedFor, setLoadedFor] = useState<string | null>(null)
+  if (data?.profile && loadedFor !== data.profile.id) {
+    setLoadedFor(data.profile.id)
+    setFullName(data.profile.full_name ?? '')
+    setPhone(data.profile.phone ?? '')
+  }
 
   if (dashboardQuery.isLoading) {
     return (

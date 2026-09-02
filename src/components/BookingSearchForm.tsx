@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { ArrowRight, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BookingSearch, Location, addDays, localDateString } from '@/lib/booking'
+import { money, usePolicy } from '@/lib/policy'
 
 /**
  * The "where are you hauling?" search. Used by the marketing home page and by the
@@ -30,6 +31,7 @@ export function BookingSearchForm({
   defaultLocationId?: string
   submitLabel?: string
 }) {
+  const policy = usePolicy()
   const navigate = useNavigate()
   const today = localDateString(new Date())
 
@@ -149,7 +151,7 @@ export function BookingSearchForm({
             className="h-4 w-4 accent-primary"
           />
           I need paid delivery{' '}
-          <span className="text-muted-foreground">($0.50 / calculated mile)</span>
+          <span className="text-muted-foreground">({money(policy.delivery_rate_per_mile)} / calculated mile)</span>
         </label>
         <Button
           type="button"

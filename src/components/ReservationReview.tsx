@@ -7,6 +7,7 @@ import {
   FileText,
   IdCard,
   MapPin,
+  CreditCard,
   ShieldCheck,
   Truck,
   User,
@@ -56,6 +57,38 @@ export function ReservationReview({
   // `supabase.rpc(...)` returns a thenable builder, not a real Promise, which
   // TanStack Query's MutationFunction type will not accept. Awaiting it inside an
   // async function produces the Promise the type actually requires.
+  // The payments function is called with the member of staff's own token, so it
+  // can check their role and their yard. It answers 503 until Stripe is
+  // configured, which is why the buttons say what they say when that happens.
+  const callPayments = async (route: string, body: Record<string, unknown>) => {
+    const { data: session } = await supabase.auth.getSession()
+    const token = session.session?.access_token
+    if (!token) throw new Error('Your session has expired. Please sign in again.')
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL ?? ''}/functions/v1/payments/${route}`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    )
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(payload?.error ?? 'The payment step did not go through.')
+    return payload
+  }
+
+  const takePayment = useMutation({
+    mutationFn: () => callPayments('collect', { reservation_id: reservation.id }),
+    onSuccess: refresh,
+    onError: e => setError(e instanceof Error ? e.message : 'The card was not charged.'),
+  })
+  const settleDeposit = useMutation({
+    mutationFn: (action: 'release' | 'capture') =>
+      callPayments('settle-deposit', { reservation_id: reservation.id, action }),
+    onSuccess: refresh,
+    onError: e => setError(e instanceof Error ? e.message : 'The deposit was not settled.'),
+  })
+
   const runRpc = async (fn: string, args: Record<string, unknown>) => {
     const { error: rpcError } = await supabase.rpc(fn, args)
     if (rpcError) throw new Error(rpcError.message)
@@ -261,6 +294,15 @@ export function ReservationReview({
           {reservation.no_show_fee_amount > 0 && (
             <Row label="No-show fee" value={formatMoney(reservation.no_show_fee_amount)} />
           )}
+          {reservation.rental_charge_status && (
+            <Row label="Card — rental" value={reservation.rental_charge_status} />
+          )}
+          {reservation.deposit_hold_status && (
+            <Row
+              label="Card — deposit hold"
+              value={reservation.deposit_hold_status.replace(/_/g, ' ')}
+            />
+          )}
           <Row label="Total" value={formatMoney(reservation.total)} strong />
           <Row
             label="Payment"
@@ -380,6 +422,18 @@ export function ReservationReview({
                 <Camera className="h-4 w-4" />
                 {pickupDone ? 'Pickup photos' : 'Pickup inspection'}
               </Button>
+              {reservation.payment_method === 'card' &&
+                reservation.rental_charge_status !== 'succeeded' && (
+                <Button
+                  variant="outline"
+                  disabled={busy || takePayment.isPending}
+                  onClick={() => { setError(''); takePayment.mutate() }}
+                  className="gap-2 bg-transparent"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  {takePayment.isPending ? 'Charging…' : 'Charge card & hold deposit'}
+                </Button>
+              )}
               <Button
                 variant={pickupDone ? 'default' : 'outline'}
                 disabled={busy}
@@ -417,6 +471,31 @@ export function ReservationReview({
                 <Camera className="h-4 w-4" />
                 {returnDone ? 'Return photos' : 'Return inspection'}
               </Button>
+              {reservation.deposit_hold_status === 'requires_capture' && (
+                <>
+                  <Button
+                    variant="outline"
+                    disabled={busy || settleDeposit.isPending}
+                    onClick={() => { setError(''); settleDeposit.mutate('release') }}
+                    className="gap-2 bg-transparent"
+                  >
+                    <CreditCard className="h-4 w-4" /> Release deposit
+                  </Button>
+                  {data.isAdmin && (
+                    <Button
+                      variant="outline"
+                      disabled={busy || settleDeposit.isPending}
+                      onClick={() => {
+                        setError('')
+                        settleDeposit.mutate('capture')
+                      }}
+                      className="gap-2 border-destructive/40 bg-transparent text-destructive hover:bg-destructive/10"
+                    >
+                      Charge deposit for damage
+                    </Button>
+                  )}
+                </>
+              )}
               <Button
                 variant={returnDone ? 'default' : 'outline'}
                 disabled={busy}

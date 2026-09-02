@@ -100,7 +100,7 @@ function DocumentsPage() {
         settings: (settings.data as unknown as Settings | null) ?? null,
         // If yards disagree, quote the strictest — telling someone they qualify and
         // then turning them away at the counter is worse than asking for a year.
-        minAge: ages.length ? Math.max(...ages) : 21,
+        minAge: ages.length ? Math.max(...ages) : 18,
       }
     },
   })
@@ -156,7 +156,7 @@ function DocumentsPage() {
       }
 
       const age = yearsBetween(dateOfBirth, today)
-      const minAge = query.data?.minAge ?? 21
+      const minAge = query.data?.minAge ?? 18
       if (age < minAge) {
         throw new Error(`OCO rents to drivers aged ${minAge} and over.`)
       }
@@ -247,7 +247,7 @@ function DocumentsPage() {
                 onChange={event => setDateOfBirth(event.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                OCO rents to drivers aged {query.data?.minAge ?? 21} and over.
+                OCO rents to drivers aged {query.data?.minAge ?? 18} and over.
               </p>
             </div>
             <div className="space-y-2">

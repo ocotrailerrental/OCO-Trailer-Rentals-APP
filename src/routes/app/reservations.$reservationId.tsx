@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TrailerImage } from '@/components/TrailerImage'
 import { Payment, Reservation, formatDate, formatMoney, localDateString } from '@/lib/booking'
 import { paymentLabel, statusClass, statusInfo, timingNote } from '@/lib/reservation-status'
+import { money, usePolicy } from '@/lib/policy'
 import { supabase } from '@/lib/supabase'
 
 export const Route = createFileRoute('/app/reservations/$reservationId')({
@@ -70,6 +71,7 @@ function ReservationDetailPage() {
     },
   })
 
+  const policy = usePolicy(query.data?.reservation.pickup_location_id)
   const [showCancel, setShowCancel] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
   const [cancelError, setCancelError] = useState('')
@@ -189,10 +191,10 @@ function ReservationDetailPage() {
                 <div>
                   <p className="text-sm font-medium">Need to cancel?</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Cancel free of charge up to 24 hours before your pickup time. Inside 24 hours
-                    it needs OCO&rsquo;s approval &mdash; call 253-264-0083 or email
-                    Robert@OCOTrailerRentals.com. Not collecting the trailer without cancelling is
-                    a no-show and carries a $50 fee.
+                    Cancel free of charge up to {policy.cancellation_notice_hours} hours before
+                    your pickup time. Inside that window it needs OCO&rsquo;s approval &mdash; call
+                    253-264-0083 or email Robert@OCOTrailerRentals.com. Not collecting the trailer
+                    without cancelling is a no-show and carries a {money(policy.no_show_fee)} fee.
                   </p>
                 </div>
                 <Button
@@ -210,8 +212,8 @@ function ReservationDetailPage() {
               <div className="space-y-3">
                 <p className="text-sm font-medium">
                   Cancel {reservation.reservation_number}? The record is kept, marked cancelled — it
-                  is not deleted. If your pickup is less than 24 hours away this will be refused and
-                  you will need to contact OCO.
+                  is not deleted. If your pickup is less than {policy.cancellation_notice_hours}{' '}
+                  hours away this will be refused and you will need to contact OCO.
                 </p>
                 <div className="space-y-2">
                   <Label htmlFor="cancel-reason">Reason (optional)</Label>

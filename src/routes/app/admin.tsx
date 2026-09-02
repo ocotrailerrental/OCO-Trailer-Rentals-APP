@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { createContext, useContext } from 'react'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { useState } from 'react'
 import {
@@ -38,6 +39,15 @@ import {
 } from '@/lib/admin'
 import { supabase } from '@/lib/supabase'
 
+/**
+ * One place for "that didn't save" messages.
+ *
+ * These used to be `window.alert`, which put a raw Postgres string in a modal
+ * that blocks the page — including the refetch queued behind it — until someone
+ * dismisses it. A banner says the same thing without stopping the console.
+ */
+const SaveErrorContext = createContext<(message: string) => void>(() => {})
+
 const TABS = ['reservations', 'finance', 'trailers', 'discounts', 'locations', 'team'] as const
 type Tab = (typeof TABS)[number]
 
@@ -60,6 +70,7 @@ export const Route = createFileRoute('/app/admin')({
 function AdminConsole() {
   const { tab } = useSearch({ from: '/app/admin' })
   const navigate = useNavigate()
+  const [saveError, setSaveError] = useState('')
   const query = useQuery({ queryKey: ['admin-console'], queryFn: loadAdminData })
 
   if (query.isLoading) {
@@ -95,7 +106,23 @@ function AdminConsole() {
   const finance = summariseFinance(data)
 
   return (
+    <SaveErrorContext.Provider value={setSaveError}>
     <div className="space-y-6">
+      {saveError && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+        >
+          <span>{saveError}</span>
+          <button
+            type="button"
+            onClick={() => setSaveError('')}
+            className="font-semibold underline underline-offset-2"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
           Administration
@@ -171,6 +198,7 @@ function AdminConsole() {
       {tab === 'locations' && <LocationsTab data={data} />}
       {tab === 'team' && <TeamTab data={data} />}
     </div>
+    </SaveErrorContext.Provider>
   )
 }
 
@@ -505,6 +533,7 @@ function scopeName(data: AdminData) {
 
 function DiscountsTab({ data }: { data: AdminData }) {
   const queryClient = useQueryClient()
+  const reportError = useContext(SaveErrorContext)
   const [open, setOpen] = useState(false)
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-console'] })
 
@@ -514,7 +543,7 @@ function DiscountsTab({ data }: { data: AdminData }) {
       if (error) throw error
     },
     onSettled: refresh,
-    onError: e => window.alert(`Not saved: ${e instanceof Error ? e.message : 'unknown error'}`),
+    onError: e => reportError(e instanceof Error ? e.message : 'The change was not saved.'),
   })
 
   const remove = useMutation({
@@ -523,7 +552,7 @@ function DiscountsTab({ data }: { data: AdminData }) {
       if (error) throw error
     },
     onSettled: refresh,
-    onError: e => window.alert(`Not deleted: ${e instanceof Error ? e.message : 'unknown error'}`),
+    onError: e => reportError(e instanceof Error ? e.message : 'The code was not deleted.'),
   })
 
   const locationName = (id: string | null) =>
@@ -1044,6 +1073,7 @@ function PersonRow({
  */
 function useSaver() {
   const queryClient = useQueryClient()
+  const reportError = useContext(SaveErrorContext)
   const mutation = useMutation({
     mutationFn: async ({
       table,
@@ -1058,13 +1088,16 @@ function useSaver() {
       if (error) throw error
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['admin-console'] }),
-    onError: error => {
-      const message = error instanceof Error ? error.message : 'The change was not saved.'
-      if (typeof window !== 'undefined') window.alert(`Not saved: ${message}`)
-    },
+    onError: error =>
+      reportError(error instanceof Error ? error.message : 'The change was not saved.'),
   })
-  return (table: EditableTable, id: string, patch: Record<string, unknown>) =>
-    mutation.mutate({ table, id, patch })
+  // `isPending` rides along so a control can disable itself while its own write
+  // is in flight, instead of being clickable twice into two racing writes.
+  return Object.assign(
+    (table: EditableTable, id: string, patch: Record<string, unknown>) =>
+      mutation.mutate({ table, id, patch }),
+    { isPending: mutation.isPending }
+  )
 }
 
 function Stat({

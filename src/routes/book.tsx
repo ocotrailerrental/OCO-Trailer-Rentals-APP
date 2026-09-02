@@ -35,7 +35,7 @@ function AvailabilityPage() {
     typeof search.returnLocationId === 'string' && search.returnLocationId.trim().length > 0 &&
     typeof search.startDate === 'string' && search.startDate.trim().length > 0 &&
     typeof search.endDate === 'string' && search.endDate.trim().length > 0 &&
-    search.endDate > search.startDate,
+    search.endDate >= search.startDate,
   )
   const locationsQuery = useQuery({
     queryKey: ['booking-locations', search.pickupLocationId, search.returnLocationId],
