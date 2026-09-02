@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, ArrowRight, Check, CircleAlert, MapPin, ShieldCheck } from 'lucide-react'
 import { AuthLoading } from '@/components/CustomerAuthLayout'
 import { OcoLockup } from '@/components/OcoLogo'
+import { SiteFooter } from '@/components/SiteFooter'
 import { TrailerImage } from '@/components/TrailerImage'
 import { Button } from '@/components/ui/button'
 import {
@@ -241,6 +242,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-5 py-12 lg:px-8">{children}</main>
+      <SiteFooter />
     </div>
   )
 }
