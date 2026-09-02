@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Truck,
   User,
+  UserX,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -43,6 +44,7 @@ export function ReservationReview({
   const [showDecline, setShowDecline] = useState(false)
   const [error, setError] = useState('')
   const [inspecting, setInspecting] = useState<'pickup' | 'return' | null>(null)
+  const [showNoShow, setShowNoShow] = useState(false)
 
   const trailer = data.trailers.find(item => item.id === reservation.trailer_id)
   const pickup = data.locations.find(item => item.id === reservation.pickup_location_id)
@@ -73,6 +75,12 @@ export function ReservationReview({
     onSuccess: () => { refresh(); onClose() },
     onError: e => setError(e instanceof Error ? e.message : 'The decline did not go through.'),
   })
+  const noShow = useMutation({
+    mutationFn: () =>
+      runRpc('oco_mark_no_show', { p_reservation_id: reservation.id, p_reason: null }),
+    onSuccess: () => { refresh(); onClose() },
+    onError: e => setError(e instanceof Error ? e.message : 'The no-show was not recorded.'),
+  })
   const collect = useMutation({
     mutationFn: () => runRpc('oco_mark_picked_up', { p_reservation_id: reservation.id }),
     onSuccess: refresh,
@@ -85,7 +93,9 @@ export function ReservationReview({
   })
 
   const status = reservation.reservation_status.toLowerCase()
-  const busy = approve.isPending || decline.isPending || collect.isPending || complete.isPending
+  const busy =
+    approve.isPending || decline.isPending || collect.isPending || complete.isPending ||
+    noShow.isPending
 
   const inspectionFor = (type: string) => inspections.find(item => item.inspection_type === type)
   const pickupDone = Boolean(inspectionFor('pickup')?.completed_at)
@@ -246,7 +256,10 @@ export function ReservationReview({
           />
           <Row label="Security deposit" value={formatMoney(reservation.security_deposit)} />
           {reservation.late_fee_amount > 0 && (
-            <Row label="Late fee" value={formatMoney(reservation.late_fee_amount)} />
+            <Row label="Late fee (charged per hour)" value={formatMoney(reservation.late_fee_amount)} />
+          )}
+          {reservation.no_show_fee_amount > 0 && (
+            <Row label="No-show fee" value={formatMoney(reservation.no_show_fee_amount)} />
           )}
           <Row label="Total" value={formatMoney(reservation.total)} strong />
           <Row
@@ -278,7 +291,7 @@ export function ReservationReview({
         )}
 
         <div className="flex flex-wrap gap-3 border-t border-border pt-5">
-          {status === 'pending' && !showDecline && (
+          {status === 'pending' && !showDecline && !showNoShow && (
             <>
               <Button
                 disabled={busy}
@@ -319,7 +332,40 @@ export function ReservationReview({
             </div>
           )}
 
-          {status === 'confirmed' && (
+          {showNoShow && (
+            <div className="w-full space-y-3">
+              <p className="text-sm">
+                Record {reservation.customer_name} as a no-show? This cancels the rental, frees the
+                trailer for those dates, and applies the no-show fee. The record is kept, not deleted.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => { setError(''); noShow.mutate() }}
+                  className="gap-2 border-destructive/40 bg-transparent text-destructive hover:bg-destructive/10"
+                >
+                  {noShow.isPending ? 'Recording…' : 'Confirm no-show'}
+                </Button>
+                <Button variant="outline" onClick={() => setShowNoShow(false)} className="bg-transparent">
+                  Back
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {['pending', 'confirmed'].includes(status) && !showDecline && !showNoShow && (
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => { setError(''); setShowNoShow(true) }}
+              className="gap-2 bg-transparent"
+            >
+              <UserX className="h-4 w-4" /> No-show
+            </Button>
+          )}
+
+          {status === 'confirmed' && !showNoShow && (
             <>
               <Button
                 variant={pickupDone ? 'outline' : 'default'}

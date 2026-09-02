@@ -185,8 +185,10 @@ function ReservationDetailPage() {
                 <div>
                   <p className="text-sm font-medium">Need to cancel?</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    You can cancel while the rental has not started. The trailer goes straight back
-                    into availability for those dates.
+                    Cancel free of charge up to 24 hours before your pickup time. Inside 24 hours
+                    it needs OCO&rsquo;s approval &mdash; call 253-264-0083 or email
+                    Robert@OCOTrailerRentals.com. Not collecting the trailer without cancelling is
+                    a no-show and carries a $50 fee.
                   </p>
                 </div>
                 <Button
@@ -204,7 +206,8 @@ function ReservationDetailPage() {
               <div className="space-y-3">
                 <p className="text-sm font-medium">
                   Cancel {reservation.reservation_number}? The record is kept, marked cancelled — it
-                  is not deleted.
+                  is not deleted. If your pickup is less than 24 hours away this will be refused and
+                  you will need to contact OCO.
                 </p>
                 <div className="space-y-2">
                   <Label htmlFor="cancel-reason">Reason (optional)</Label>

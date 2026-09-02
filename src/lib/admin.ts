@@ -93,6 +93,8 @@ export type AdminReservation = {
   picked_up_at: string | null
   returned_at: string | null
   late_fee_amount: number
+  no_show_fee_amount: number
+  no_show_at: string | null
   /** Null means the customer booked before the agreement existed, or acceptance failed to record. */
   agreement_id: string | null
   agreement_accepted_at: string | null
@@ -279,7 +281,8 @@ export async function loadAdminData(): Promise<AdminData> {
           'delivery_miles,delivery_fee,pre_discount_subtotal,discount_code,discount_amount,' +
           'rental_subtotal,security_deposit,taxes,tax_rate,total,payment_method,payment_status,' +
           'reservation_status,customer_notes,staff_notes,created_at,due_back_at,picked_up_at,' +
-          'returned_at,late_fee_amount,agreement_id,agreement_accepted_at,agreement_accepted_name,' +
+          'returned_at,late_fee_amount,no_show_fee_amount,no_show_at,' +
+          'agreement_id,agreement_accepted_at,agreement_accepted_name,' +
           'approved_at,approved_by,declined_at,declined_by,decline_reason'
       )
       .order('start_date', { ascending: false }),
