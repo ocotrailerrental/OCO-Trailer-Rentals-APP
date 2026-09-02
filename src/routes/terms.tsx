@@ -101,7 +101,7 @@ function TermsPage() {
         </a>
 
         <h1 className="mt-6 font-serif text-4xl sm:text-5xl">Terms and conditions</h1>
-        <p className="mt-3 text-sm text-muted-foreground">Last Updated: 1-19-2025</p>
+        <p className="mt-3 text-sm text-muted-foreground">Last Updated: 9-1-2026</p>
 
         <p className="mt-8 leading-7">
           Welcome to OCO Trailer Rental (&ldquo;Company,&rdquo; &ldquo;we,&rdquo;
@@ -134,10 +134,10 @@ function TermsPage() {
             <ul className="mt-4 space-y-2 text-sm">
               <li>
                 <a
-                  href="mailto:ocotrailerrental@gmail.com"
+                  href="mailto:Robert@OCOTrailerRentals.com"
                   className="font-semibold text-primary hover:underline"
                 >
-                  ocotrailerrental@gmail.com
+                  Robert@OCOTrailerRentals.com
                 </a>
               </li>
               <li>
