@@ -69,6 +69,11 @@ export function SiteFooter() {
                   </a>
                 </li>
                 <li>
+                  <a href="/privacy" className="hover:text-sidebar-foreground">
+                    Privacy policy
+                  </a>
+                </li>
+                <li>
                   <a href="/#fleet" className="hover:text-sidebar-foreground">
                     The fleet
                   </a>
@@ -103,6 +108,10 @@ export function SiteFooter() {
             By providing your information on this website you agree to our{' '}
             <a href="/terms" className="underline hover:text-sidebar-foreground">
               terms and conditions
+            </a>{' '}
+            and{' '}
+            <a href="/privacy" className="underline hover:text-sidebar-foreground">
+              privacy policy
             </a>
             .
           </p>

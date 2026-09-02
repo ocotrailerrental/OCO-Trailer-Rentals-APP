@@ -16,6 +16,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as BookRouteImport } from './routes/book'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
@@ -59,6 +60,11 @@ const BookRoute = BookRouteImport.update({
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TrailersSlugRoute = TrailersSlugRouteImport.update({
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/book': typeof BookRoute
   '/terms': typeof TermsRoute
+  '/privacy': typeof PrivacyRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reserve': typeof ReserveRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/book': typeof BookRoute
   '/terms': typeof TermsRoute
+  '/privacy': typeof PrivacyRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reserve': typeof ReserveRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/book': typeof BookRoute
   '/terms': typeof TermsRoute
+  '/privacy': typeof PrivacyRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reserve': typeof ReserveRoute
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/book'
     | '/terms'
+    | '/privacy'
     | '/forgot-password'
     | '/login'
     | '/reserve'
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/'
     | '/book'
     | '/terms'
+    | '/privacy'
     | '/forgot-password'
     | '/login'
     | '/reserve'
@@ -204,6 +215,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/book'
     | '/terms'
+    | '/privacy'
     | '/forgot-password'
     | '/login'
     | '/reserve'
@@ -223,6 +235,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   BookRoute: typeof BookRoute
   TermsRoute: typeof TermsRoute
+  PrivacyRoute: typeof PrivacyRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   ReserveRoute: typeof ReserveRoute
@@ -280,6 +293,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -383,6 +403,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   BookRoute: BookRoute,
   TermsRoute: TermsRoute,
+  PrivacyRoute: PrivacyRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   ReserveRoute: ReserveRoute,

@@ -47,7 +47,7 @@ const SECTIONS: { heading: string; clauses: string[] }[] = [
   {
     heading: '3. Privacy and Data Protection',
     clauses: [
-      '3.1. Privacy Policy: Your information will be handled in accordance with our Privacy Policy, which explains how your data is collected, stored, and used.',
+      '3.1. Privacy Policy: Your information will be handled in accordance with our Privacy Policy, which explains how your data is collected, stored, and used. It is published at /privacy on this website.',
       '3.2. Third-Party Sharing: We do not sell your information to third parties. However, we may share your information with trusted partners solely for the purpose of fulfilling your inquiry or providing related services.',
     ],
   },
