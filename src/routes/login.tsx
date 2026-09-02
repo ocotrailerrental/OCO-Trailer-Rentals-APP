@@ -46,7 +46,16 @@ function LoginForm() {
       setIsSubmitting(false)
       return
     }
+    // `redirect` is a full href — "/reserve?trailerId=…&startDate=…" — because that
+    // is what the reserve page captured on the way out. Router `to:` takes a route
+    // path, not an href, so navigating with it drops the query string and the
+    // customer lands on an incomplete reservation. A location assignment keeps the
+    // whole thing, and it is already proven internal by `safeInternalRedirect`.
     const redirect = safeInternalRedirect(search.redirect) ?? '/app'
+    if (redirect.includes('?')) {
+      window.location.assign(redirect)
+      return
+    }
     await navigate({ to: redirect })
   }
 

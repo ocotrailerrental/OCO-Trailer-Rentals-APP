@@ -56,7 +56,10 @@ export function Shell({ sidebar, appName = 'App', children }: ShellProps) {
           <span className="font-semibold text-sm">{appName}</span>
         </div>
 
-        {children}
+        {/* Every /app page is a bare `space-y-*` stack, so the padding has to live
+            here. Without it the dashboard, admin console and every form render
+            flush against the sidebar and the window edge at every breakpoint. */}
+        <div className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</div>
       </main>
     </div>
   )

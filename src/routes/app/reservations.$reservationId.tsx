@@ -56,11 +56,15 @@ function ReservationDetailPage() {
       const { data: authData } = await supabase.auth.getUser()
       const profileId = authData.user?.id
       if (!profileId) return { ready: false }
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('oco_customer_verification')
         .select('license_expiry,insurance_type')
         .eq('profile_id', profileId)
         .maybeSingle()
+      // A failed lookup is not the same as "nothing on file". Treating it as
+      // missing tells a customer who already uploaded their licence that we still
+      // need it — so an error stays quiet instead.
+      if (error) return { ready: true }
       const row = data as { license_expiry?: string | null; insurance_type?: string | null } | null
       return { ready: Boolean(row?.license_expiry && row?.insurance_type) }
     },
