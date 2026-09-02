@@ -90,7 +90,7 @@ const SECTIONS: Section[] = [
           { term: 'Identifiers', text: 'Name, company name, and business contact details.' },
           {
             term: 'Payment Information',
-            text: 'Card details for payment, handled entirely by our payment processor. OCO stores only the card type and its last four digits.',
+            text: 'Card details for payment, handled entirely by our payment processor. Your card number is never sent to or held by OCO.',
           },
         ],
       },

@@ -10,8 +10,7 @@ import { supabase } from '@/lib/supabase'
  *
  * The card is typed into an iframe served by Stripe and goes straight to them —
  * the number never reaches OCO's servers, never reaches this JavaScript, and is
- * never in a request this app can read. What comes back is a token; what OCO
- * stores is the brand and the last four digits.
+ * never in a request this app can read. What comes back is a token.
  *
  * Nothing is charged here. The rental is charged and the deposit authorised when
  * a member of staff records the collection, which is the arrangement the rental
@@ -199,8 +198,7 @@ export function CardOnFile({ onSaved }: { onSaved?: (saved: boolean) => void }) 
 
         <p className="flex items-start gap-2 text-xs leading-5 text-muted-foreground">
           <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-          Card details go straight to our payment provider. OCO never sees or stores your card
-          number — only the type and last four digits.
+          Card details go straight to our payment provider. Your card number never reaches OCO.
         </p>
       </CardContent>
     </Card>

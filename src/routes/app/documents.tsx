@@ -36,6 +36,8 @@ type Verification = {
   policy_expiry: string | null
   insurance_doc_path: string | null
   coverage_label: string | null
+  mailing_address: string | null
+  tow_vehicle: string | null
   submitted_at: string | null
   verified_at: string | null
 }
@@ -78,7 +80,7 @@ function DocumentsPage() {
           .select(
             'profile_id,date_of_birth,license_state,license_last4,license_expiry,license_photo_path,' +
               'insurance_type,insurer_name,policy_number,policy_expiry,insurance_doc_path,' +
-              'coverage_label,submitted_at,verified_at'
+              'coverage_label,mailing_address,tow_vehicle,submitted_at,verified_at'
           )
           .eq('profile_id', profileId)
           .maybeSingle(),
@@ -116,6 +118,11 @@ function DocumentsPage() {
   const [insurerName, setInsurerName] = useState('')
   const [policyNumber, setPolicyNumber] = useState('')
   const [policyExpiry, setPolicyExpiry] = useState('')
+  // Not verification, strictly — but the rental agreement asks for both, and this
+  // is the page where a renter fills in the things OCO needs before a handover.
+  // Kept here so the agreement arrives complete instead of saying "Not stated".
+  const [mailingAddress, setMailingAddress] = useState('')
+  const [towVehicle, setTowVehicle] = useState('')
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
   const [loadedFor, setLoadedFor] = useState<string | null>(null)
@@ -131,6 +138,8 @@ function DocumentsPage() {
     setInsurerName(existing?.insurer_name ?? '')
     setPolicyNumber(existing?.policy_number ?? '')
     setPolicyExpiry(existing?.policy_expiry ?? '')
+    setMailingAddress(existing?.mailing_address ?? '')
+    setTowVehicle(existing?.tow_vehicle ?? '')
   }
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['my-documents'] })
@@ -171,6 +180,8 @@ function DocumentsPage() {
         insurer_name: insuranceType === 'own' ? insurerName.trim() : null,
         policy_number: insuranceType === 'own' ? policyNumber.trim() || null : null,
         policy_expiry: insuranceType === 'own' ? policyExpiry : null,
+        mailing_address: mailingAddress.trim() || null,
+        tow_vehicle: towVehicle.trim() || null,
         submitted_at: new Date().toISOString(),
       }
       if (insuranceType === 'oco_coverage') {
@@ -300,6 +311,42 @@ function DocumentsPage() {
             profileId={query.data?.profileId ?? ''}
             onDone={refresh}
           />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="space-y-5 p-5 sm:p-7">
+          <h2 className="flex items-center gap-2 font-serif text-2xl">
+            <IdCard className="h-5 w-5 text-primary" /> For the rental agreement
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            The agreement records both of these. Fill them in once and every rental agreement you
+            sign comes through already completed.
+          </p>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="mailing-address">Mailing address</Label>
+              <Input
+                id="mailing-address"
+                value={mailingAddress}
+                onChange={event => setMailingAddress(event.target.value)}
+                placeholder="Street, city, state, ZIP"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tow-vehicle">Tow vehicle</Label>
+              <Input
+                id="tow-vehicle"
+                value={towVehicle}
+                onChange={event => setTowVehicle(event.target.value)}
+                placeholder="Year, make, model and plate"
+              />
+              <p className="text-xs text-muted-foreground">
+                Change it at booking if you are towing with something else that trip.
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
