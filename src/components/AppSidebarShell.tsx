@@ -11,7 +11,7 @@
  */
 import { useState, useEffect, useCallback } from 'react'
 import type { ReactNode } from 'react'
-import { useLocation } from '@tanstack/react-router'
+import { Link, useLocation } from '@tanstack/react-router'
 import { supabase } from '@/lib/supabase'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -167,11 +167,28 @@ export function AppSidebarShell() {
             collapsed && 'justify-center px-2'
           )}
         >
+          {/*
+            The logo goes home, as it does on every public page. Before this it was
+            plain artwork, so the only way out of the signed-in area was to sign out.
+          */}
           {!collapsed && (
-            <>
+            <Link
+              to="/"
+              className="flex flex-1 items-center gap-2 truncate rounded-md outline-none hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="OCO Trailer Rentals — home"
+            >
               <OcoMark className="h-7 w-7 shrink-0" />
-              <span className="flex-1 font-semibold text-sm truncate">OCO Trailer Rentals</span>
-            </>
+              <span className="flex-1 truncate text-sm font-semibold">OCO Trailer Rentals</span>
+            </Link>
+          )}
+          {collapsed && (
+            <Link
+              to="/"
+              className="rounded-md outline-none hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="OCO Trailer Rentals — home"
+            >
+              <OcoMark className="h-7 w-7 shrink-0" />
+            </Link>
           )}
           <Tooltip>
             <TooltipTrigger asChild>

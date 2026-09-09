@@ -1,6 +1,11 @@
 # OCO Trailer Rentals — robots.txt
 # Served as a real static file so crawlers get this, not the app shell.
 
+# The Disallow rules have to be repeated in every named-agent block. A crawler
+# obeys the FIRST block matching its own name and ignores all the others, so the
+# AI blocks below used to carry a bare "Allow: /" and were being invited into the
+# very account pages this file exists to keep out of search results.
+
 User-agent: *
 Allow: /
 # Customer account pages and auth flows hold nothing useful to a crawler and
@@ -13,16 +18,37 @@ Disallow: /reset-password
 Disallow: /reserve
 
 # AI answer engines — allowed on the public pages so OCO can be cited when
-# someone asks about trailer rentals in Omaha or Anchorage.
+# someone asks about trailer rentals in Omaha or Anchorage, and held to the same
+# limits as everybody else.
+
 User-agent: OAI-SearchBot
 Allow: /
+Disallow: /app
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /reserve
 
 User-agent: Claude-SearchBot
 Allow: /
+Disallow: /app
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /reserve
 
 User-agent: PerplexityBot
 Allow: /
+Disallow: /app
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /reserve
 
-# Replace with the absolute URL once a domain is pointed at the app,
-# e.g. https://ocotrailerrentals.com/sitemap.xml
-Sitemap: /sitemap.xml
+# Must be absolute. A relative path here is ignored by every major crawler, which
+# is why the sitemap has never been read. Change this line and the <loc> values in
+# sitemap.xml together if the app moves to its own domain.
+Sitemap: https://oco-trailer-rentals-app.vercel.app/sitemap.xml

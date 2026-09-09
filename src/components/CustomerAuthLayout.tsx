@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { OcoLockup } from '@/components/OcoLogo'
+import { AuthLegalLinks } from '@/components/SiteFooter'
 
 export function CustomerAuthLayout({
   title,
@@ -25,6 +26,11 @@ export function CustomerAuthLayout({
           </CardHeader>
           <CardContent className="px-6 pb-6 pt-4">{children}</CardContent>
         </Card>
+        {/*
+          Terms and privacy were unreachable from every page where an account is
+          created — the one place the law most expects them to be one tap away.
+        */}
+        <AuthLegalLinks />
       </div>
     </main>
   )

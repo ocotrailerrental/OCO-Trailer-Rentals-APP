@@ -111,3 +111,25 @@ export function SiteFooter() {
     </footer>
   )
 }
+
+/**
+ * The legal links on their own, for the sign-in and sign-up pages.
+ *
+ * The full footer is too heavy for a centred auth card, but the links themselves
+ * are not optional: the copy under those forms tells people that submitting their
+ * details means they agree to both documents, so both documents have to be one tap
+ * away from that form.
+ */
+export function AuthLegalLinks() {
+  return (
+    <p className="mt-6 text-center text-xs leading-6 text-sidebar-foreground/50">
+      <a href="/terms" className="underline underline-offset-2 hover:text-sidebar-foreground">
+        Terms and conditions
+      </a>
+      <span className="px-2">·</span>
+      <a href="/privacy" className="underline underline-offset-2 hover:text-sidebar-foreground">
+        Privacy policy
+      </a>
+    </p>
+  )
+}

@@ -37,14 +37,21 @@ export function BookingSearchForm({
 
   const [pickupLocationId, setPickupLocationId] = useState('')
   const [returnLocationId, setReturnLocationId] = useState('')
+  // A one-day rental is the common case, so that is what the form offers. It used
+  // to open on a seven-day range, which quietly quoted a week to anyone who did
+  // not notice and change it.
   const [startDate, setStartDate] = useState(() => localDateString(new Date()))
-  const [endDate, setEndDate] = useState(() => addDays(localDateString(new Date()), 7))
+  const [endDate, setEndDate] = useState(() => addDays(localDateString(new Date()), 1))
   const [delivery, setDelivery] = useState(false)
   const [searchError, setSearchError] = useState('')
 
-  const fallback = defaultLocationId || locations[0]?.id || ''
+  // No yard is preselected. Both dropdowns used to default to whichever location
+  // sorted first — Anchorage — so an Omaha customer who changed only the pickup
+  // was silently searching a one-way rental to Alaska. The return follows the
+  // pickup until the customer sets it themselves, which is the ordinary case.
+  const fallback = defaultLocationId || ''
   const pickup = pickupLocationId || fallback
-  const returnLocation = returnLocationId || fallback
+  const returnLocation = returnLocationId || pickup
   const disabled = isLoading || locations.length === 0
 
   function submitSearch() {

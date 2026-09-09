@@ -637,6 +637,7 @@ function DiscountsTab({ data }: { data: AdminData }) {
                     <Toggle
                       checked={discount.is_active}
                       label="Active"
+                      disabled={toggle.isPending}
                       onChange={value => toggle.mutate({ id: discount.id, is_active: value })}
                     />
                     <button
@@ -865,6 +866,7 @@ function TrailersTab({ data }: { data: AdminData }) {
                     <Toggle
                       checked={trailer.is_active}
                       label="Listed"
+                      disabled={save.isPending}
                       onChange={value => save('oco_trailers', trailer.id, { is_active: value })}
                     />
                   </div>
@@ -932,7 +934,7 @@ function LocationsTab({ data }: { data: AdminData }) {
                 <Toggle
                   checked={location.is_active}
                   label="Open"
-                  disabled={!data.isAdmin}
+                  disabled={!data.isAdmin || save.isPending}
                   onChange={value => save('oco_locations', location.id, { is_active: value })}
                 />
               </div>

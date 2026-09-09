@@ -3,6 +3,7 @@ import { Outlet, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { SharedAppLayout } from '@/layouts/shared-app-layout'
 import { AuthLoading } from '@/components/CustomerAuthLayout'
 import { ClientOnlyBoundary } from '@/components/ClientOnlyBoundary'
+import { safeInternalRedirect } from '@/lib/booking'
 import { supabase } from '@/lib/supabase'
 
 /**
@@ -25,6 +26,19 @@ function AppLayout() {
   )
 }
 
+/**
+ * Where the visitor was heading, so signing in can put them back there.
+ *
+ * This used to send `redirect: undefined`, which meant anyone who opened a link
+ * to a specific reservation while signed out was dropped on the dashboard after
+ * signing in, with no idea what they had clicked. `safeInternalRedirect` on the
+ * login side is what keeps this from becoming an open redirect.
+ */
+function currentPath() {
+  if (typeof window === 'undefined') return undefined
+  return safeInternalRedirect(`${window.location.pathname}${window.location.search}`)
+}
+
 function AuthenticatedApp() {
   const navigate = useNavigate()
   const [isChecking, setIsChecking] = useState(true)
@@ -34,7 +48,7 @@ function AuthenticatedApp() {
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return
       if (!session) {
-        navigate({ to: '/login', search: { redirect: undefined }, replace: true })
+        navigate({ to: '/login', search: { redirect: currentPath() }, replace: true })
         return
       }
       setIsChecking(false)
@@ -42,7 +56,7 @@ function AuthenticatedApp() {
     supabase.auth.getSession().then(({ data, error }) => {
       if (!mounted) return
       if (error || !data.session) {
-        navigate({ to: '/login', search: { redirect: undefined }, replace: true })
+        navigate({ to: '/login', search: { redirect: currentPath() }, replace: true })
         return
       }
       setIsChecking(false)
