@@ -203,8 +203,16 @@ export type AdminDiscount = {
   created_at: string
 }
 
+/** A yard's street address. Private table — see `oco_location_pickup`. */
+export type AdminPickupAddress = {
+  location_id: string
+  pickup_address: string
+  arrival_notes: string | null
+}
+
 export type AdminData = {
   locations: AdminLocation[]
+  pickupAddresses: AdminPickupAddress[]
   trailers: AdminTrailer[]
   registrations: AdminRegistration[]
   profiles: AdminProfile[]
@@ -257,7 +265,7 @@ export async function loadAdminData(): Promise<AdminData> {
   }
 
   const [locations, trailers, registrations, profiles, reservations, payments, discounts,
-         verifications, inspections, inspectionPhotos] =
+         verifications, inspections, inspectionPhotos, pickupAddresses] =
     await Promise.all([
     supabase
       .from('oco_locations')
@@ -320,6 +328,10 @@ export async function loadAdminData(): Promise<AdminData> {
       .from('oco_inspection_photos')
       .select('id,inspection_id,storage_path,photo_category,notes,created_at')
       .order('created_at'),
+    // Yard street addresses live in their own table, because `oco_locations` is
+    // readable by the public and an address column there would be too. A manager
+    // gets their own yard back and nothing else.
+    supabase.from('oco_location_pickup').select('location_id,pickup_address,arrival_notes'),
   ])
 
   if (locations.error) throw locations.error
@@ -356,6 +368,9 @@ export async function loadAdminData(): Promise<AdminData> {
       photo_count: photoCounts.get(item.id) ?? 0,
     })),
     inspectionPhotos: photoRows,
+    // Additive, like the two above: a permission problem here must not blank the
+    // console, so it degrades to "no address on file" instead.
+    pickupAddresses: (pickupAddresses.error ? [] : (pickupAddresses.data ?? [])) as unknown as AdminPickupAddress[],
     isStaff, isAdmin, isManager, managerLocationId, role, selfId,
   }
 }

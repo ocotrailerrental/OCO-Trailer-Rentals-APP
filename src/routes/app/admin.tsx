@@ -940,7 +940,19 @@ function LocationsTab({ data }: { data: AdminData }) {
               </div>
 
               <dl className="mt-4 space-y-2 border-t border-border pt-3 text-sm">
-                <Row label="Address" value={location.address ?? 'Not set'} />
+                {/*
+                  The pickup address is not on the locations record — that one is
+                  public. It comes from oco_location_pickup, which the database
+                  shows only to staff for this yard and to renters who have booked
+                  it. Labelled here so nobody publishes it by accident.
+                */}
+                <Row
+                  label="Pickup address (private)"
+                  value={
+                    data.pickupAddresses.find(a => a.location_id === location.id)?.pickup_address ??
+                    'Not set'
+                  }
+                />
                 <Row label="Contact" value={location.contact_name ?? 'Not set'} />
                 <Row label="Phone" value={location.contact_phone ?? 'Not set'} />
                 <Row label="Trailers" value={String(trailers.length)} />

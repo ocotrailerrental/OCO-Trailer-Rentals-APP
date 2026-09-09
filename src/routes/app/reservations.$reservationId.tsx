@@ -33,12 +33,15 @@ type TrailerRef = {
   description: string | null
 }
 type LocationRef = { id: string; name: string; city: string; timezone: string }
+type PickupAddress = { pickup_address: string; arrival_notes: string | null }
 type DetailData = {
   reservation: Reservation
   trailer: TrailerRef | null
   pickup: LocationRef | null
   dropoff: LocationRef | null
   payments: Payment[]
+  /** Null until this customer holds a live booking at that yard — enforced in the database. */
+  pickupAddress: PickupAddress | null
 }
 
 function ReservationDetailPage() {
@@ -119,7 +122,7 @@ function ReservationDetailPage() {
     )
   }
 
-  const { reservation, trailer, pickup, dropoff, payments } = query.data
+  const { reservation, trailer, pickup, dropoff, payments, pickupAddress } = query.data
   const status = statusInfo(reservation.reservation_status)
   const timing = timingNote(
     reservation.reservation_status,
@@ -287,6 +290,27 @@ function ReservationDetailPage() {
                     : 'You collect it'
                 }
               />
+              {/*
+                The yard's street address, shown only because this booking exists.
+                The database will not return the row to anyone without a live
+                reservation here, so there is nothing to gate in the interface.
+              */}
+              {reservation.pickup_method !== 'delivery' && pickupAddress && (
+                <div className="rounded-lg border border-primary/25 bg-primary/5 p-4">
+                  <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+                    <MapPin className="h-3.5 w-3.5" /> Collect from
+                  </p>
+                  <p className="mt-2 font-medium leading-6">{pickupAddress.pickup_address}</p>
+                  {pickupAddress.arrival_notes && (
+                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+                      {pickupAddress.arrival_notes}
+                    </p>
+                  )}
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                    Please keep this address to yourself — we give it out only to booked renters.
+                  </p>
+                </div>
+              )}
               {trailer && (
                 <a
                   href={`/trailers/${trailer.slug}`}
@@ -424,7 +448,7 @@ async function loadReservation(id: string): Promise<DetailData | null> {
   if (!reservationResult.data) return null
   const reservation = reservationResult.data as unknown as Reservation
 
-  const [trailerResult, locationsResult, paymentsResult] = await Promise.all([
+  const [trailerResult, locationsResult, paymentsResult, pickupAddressResult] = await Promise.all([
     supabase
       .from('oco_trailers')
       .select('name,slug,image_url,length_feet,description')
@@ -439,6 +463,14 @@ async function loadReservation(id: string): Promise<DetailData | null> {
       .select('id,amount,method,status,provider,paid_at,created_at')
       .eq('reservation_id', reservation.id)
       .order('created_at', { ascending: true }),
+    // The yard's street address. This table is not public — the database only
+    // returns a row to someone holding a live booking at that yard, so this comes
+    // back empty for everyone else and needs no check of its own here.
+    supabase
+      .from('oco_location_pickup')
+      .select('pickup_address,arrival_notes')
+      .eq('location_id', reservation.pickup_location_id)
+      .maybeSingle(),
   ])
   if (trailerResult.error) throw trailerResult.error
   if (locationsResult.error) throw locationsResult.error
@@ -451,5 +483,6 @@ async function loadReservation(id: string): Promise<DetailData | null> {
     pickup: locations.find(item => item.id === reservation.pickup_location_id) ?? null,
     dropoff: locations.find(item => item.id === reservation.return_location_id) ?? null,
     payments: (paymentsResult.data ?? []) as unknown as Payment[],
+    pickupAddress: (pickupAddressResult.data as unknown as PickupAddress | null) ?? null,
   }
 }
