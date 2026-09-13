@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { AccountCacheBoundary } from '@/components/AccountCacheBoundary'
 import { Toaster } from '@/components/ui/sonner'
 import type { ReactNode } from 'react'
 import { supabaseConfigError } from '@/lib/supabase'
@@ -95,6 +96,12 @@ function RootDocument({ children }: { children: ReactNode }) {
       </head>
       <body>
         <QueryClientProvider client={queryClient}>
+          {/*
+            Cached query data belongs to one account. This drops all of it the
+            moment a different account signs in — see the component for the bug
+            that made it necessary.
+          */}
+          <AccountCacheBoundary>
           <TooltipProvider delayDuration={0}>
             <Toaster />
             {/*
@@ -109,6 +116,7 @@ function RootDocument({ children }: { children: ReactNode }) {
             */}
             {supabaseConfigError ? <ConfigurationNotice detail={supabaseConfigError} /> : children}
           </TooltipProvider>
+          </AccountCacheBoundary>
         </QueryClientProvider>
         <Scripts />
       </body>

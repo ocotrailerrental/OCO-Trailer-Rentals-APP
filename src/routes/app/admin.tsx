@@ -400,8 +400,9 @@ function FinanceTab({ data }: { data: AdminData }) {
           <Row label="Collected" value={formatMoney(finance.collectedCard)} strong />
           <Row label="Authorised or in flight" value={formatMoney(finance.pendingCard)} />
           <p className="pt-2 text-xs leading-5 text-muted-foreground">
-            Card payments land here once the provider confirms them. Stripe is not wired up yet, so
-            this stays at zero until it is.
+            Card payments land here once Stripe confirms them, never when the browser says so — which
+            is why a charge can take a moment to appear. A deposit hold counts as authorised, not
+            collected, unless it is charged for damage.
           </p>
         </Panel>
       </div>

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { formatDate, formatMoney, localDateString } from '@/lib/booking'
 import { isFinished, statusClass, statusInfo, timingNote } from '@/lib/reservation-status'
 import { supabase } from '@/lib/supabase'
+import { fetchOwnProfile } from '@/lib/profile'
 
 const getErrorMessage = (error: unknown) =>
   error && typeof error === 'object' && 'message' in error
@@ -316,7 +317,7 @@ async function loadDashboard(): Promise<DashboardData> {
     throw new Error('Your session has expired. Please sign in again.')
 
   const [profileResult, reservationsResult] = await Promise.all([
-    supabase.from('oco_profiles').select('full_name, phone').eq('id', authData.user.id).maybeSingle(),
+    fetchOwnProfile<Profile>(authData.user.id, 'full_name, phone'),
     supabase
       .from('oco_reservations')
       .select('id,reservation_number,start_date,end_date,total,reservation_status,payment_status')
@@ -328,7 +329,7 @@ async function loadDashboard(): Promise<DashboardData> {
 
   return {
     email: authData.user.email ?? '',
-    profile: (profileResult.data as unknown as Profile | null) ?? null,
+    profile: profileResult.data ?? null,
     reservations: (reservationsResult.data ?? []) as unknown as DashboardReservation[],
   }
 }

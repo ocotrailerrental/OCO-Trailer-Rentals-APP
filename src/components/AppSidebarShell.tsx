@@ -13,6 +13,7 @@ import { useState, useEffect, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { supabase } from '@/lib/supabase'
+import { fetchOwnProfile } from '@/lib/profile'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -122,21 +123,30 @@ export function AppSidebarShell() {
   const [isStaff, setIsStaff] = useState(false)
   useEffect(() => {
     let active = true
-    void (async () => {
+
+    const load = async () => {
       const { data, error } = await supabase.auth.getUser()
-      if (!active || error || !data.user) return
+      if (!active || error || !data.user) {
+        if (active) { setAccount(null); setIsStaff(false) }
+        return
+      }
       const email = data.user.email ?? ''
-      const { data: profile } = await supabase
-        .from('oco_profiles')
-        .select('full_name,role')
-        .eq('id', data.user.id)
-        .maybeSingle()
+      const { data: row } = await fetchOwnProfile<{ full_name?: string | null; role?: string }>(
+        data.user.id,
+        'full_name,role'
+      )
       if (!active) return
-      const row = profile as { full_name?: string | null; role?: string } | null
       setAccount({ name: row?.full_name?.trim() || '', email })
       setIsStaff(STAFF_ROLES.includes((row?.role ?? 'customer').toLowerCase()))
-    })()
-    return () => { active = false }
+    }
+
+    void load()
+
+    // The shell is not remounted when one account replaces another in the same
+    // tab, so without this the name, initials and the Admin link stayed those of
+    // whoever was signed in before.
+    const { data: listener } = supabase.auth.onAuthStateChange(() => { void load() })
+    return () => { active = false; listener.subscription.unsubscribe() }
   }, [])
 
   const displayName = account?.name || (account?.email ? account.email.split('@')[0] : 'Your account')

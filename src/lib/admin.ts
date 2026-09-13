@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { fetchOwnProfile } from '@/lib/profile'
 
 /**
  * Data for the admin console.
@@ -241,13 +242,11 @@ export async function loadAdminData(): Promise<AdminData> {
   if (authError || !authData.user) throw new Error('Your session has expired. Please sign in again.')
   const selfId = authData.user.id
 
-  const { data: self, error: selfError } = await supabase
-    .from('oco_profiles')
-    .select('role,location_id')
-    .eq('id', selfId)
-    .maybeSingle()
+  const { data: selfRow, error: selfError } = await fetchOwnProfile<{
+    role?: string
+    location_id?: string | null
+  }>(selfId, 'role,location_id')
   if (selfError) throw selfError
-  const selfRow = self as unknown as { role?: string; location_id?: string | null } | null
   const role = (selfRow?.role ?? 'customer').toLowerCase()
   const isStaff = STAFF_ROLES.includes(role)
   const isAdmin = role === 'admin' || role === 'owner'
