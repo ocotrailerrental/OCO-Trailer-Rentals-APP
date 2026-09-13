@@ -16,24 +16,32 @@ import { supabase } from '@/lib/supabase'
  * the account, at the default role. It cannot be used to grant a role: the
  * insert does not take one.
  */
-export async function fetchOwnProfile<T>(userId: string, columns: string) {
+export async function fetchOwnProfile<T>(
+  userId: string,
+  columns: string
+): Promise<{ data: T | null; error: unknown }> {
   const first = await supabase
     .from('oco_profiles')
     .select(columns)
     .eq('id', userId)
     .maybeSingle()
 
-  // A real error (offline, policy) is the caller's to handle; only a clean
-  // "no such row" is worth a repair attempt.
-  if (first.error || first.data) return first as unknown as { data: T | null; error: typeof first.error }
+  // A real error (offline, a policy refusal) is the caller's to handle; only a
+  // clean "no such row" is worth a repair attempt.
+  if (first.error) return { data: null, error: first.error }
+  if (first.data) return { data: first.data as unknown as T, error: null }
 
   const { error: repairError } = await supabase.rpc('oco_ensure_own_profile')
-  if (repairError) return { data: null as T | null, error: repairError }
+  if (repairError) return { data: null, error: repairError }
 
   const second = await supabase
     .from('oco_profiles')
     .select(columns)
     .eq('id', userId)
     .maybeSingle()
-  return second as unknown as { data: T | null; error: typeof second.error }
+
+  return {
+    data: (second.data as unknown as T) ?? null,
+    error: second.error,
+  }
 }

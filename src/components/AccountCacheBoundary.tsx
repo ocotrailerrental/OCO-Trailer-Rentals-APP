@@ -40,5 +40,5 @@ export function AccountCacheBoundary({ children }: { children: ReactNode }) {
     return () => listener.subscription.unsubscribe()
   }, [queryClient])
 
-  return children
+  return <>{children}</>
 }

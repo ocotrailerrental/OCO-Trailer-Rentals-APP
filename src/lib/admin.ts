@@ -257,7 +257,7 @@ export async function loadAdminData(): Promise<AdminData> {
     return {
       locations: [], trailers: [], registrations: [], profiles: [],
       reservations: [], payments: [], discounts: [], verifications: [], inspections: [],
-      inspectionPhotos: [],
+      inspectionPhotos: [], pickupAddresses: [],
       isStaff: false, isAdmin: false, isManager: false,
       managerLocationId: null, role, selfId,
     }
