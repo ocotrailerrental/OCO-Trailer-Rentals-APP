@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowRight, CalendarDays, CalendarPlus, CircleAlert, MapPin, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -6,7 +7,11 @@ import { Card, CardContent } from '@/components/ui/card'
 import { TrailerImage } from '@/components/TrailerImage'
 import { Reservation, formatDate, formatMoney, localDateString } from '@/lib/booking'
 import { isFinished, paymentLabel, statusClass, statusInfo, timingNote } from '@/lib/reservation-status'
+import { usePolicy } from '@/lib/policy'
 import { supabase } from '@/lib/supabase'
+
+/** Same statuses the reservation detail page allows a customer to cancel from. */
+const CANCELLABLE = new Set(['pending', 'confirmed'])
 
 export const Route = createFileRoute('/app/reservations')({
   head: () => ({ meta: [{ title: 'My rentals · OCO Trailer Rentals' }] }),
@@ -131,15 +136,16 @@ function RentalSection({
 function RentalCard({ rental, today }: { rental: RentalRow; today: string }) {
   const status = statusInfo(rental.reservation_status)
   const timing = timingNote(rental.reservation_status, rental.start_date, rental.end_date, today)
+  const cancellable = CANCELLABLE.has(rental.reservation_status.toLowerCase())
 
   return (
-    <Link
-      to="/app/reservations/$reservationId"
-      params={{ reservationId: rental.id }}
-      className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-    >
-      <Card className="overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md">
-        <CardContent className="flex flex-col gap-0 p-0 sm:flex-row">
+    <Card className="overflow-hidden transition-all hover:shadow-md">
+      <CardContent className="flex flex-col gap-0 p-0 sm:flex-row">
+        <Link
+          to="/app/reservations/$reservationId"
+          params={{ reservationId: rental.id }}
+          className="flex flex-1 flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:flex-row"
+        >
           <div className="h-36 w-full shrink-0 bg-sidebar sm:h-auto sm:w-44">
             <TrailerImage
               src={rental.trailer?.image_url}
@@ -148,53 +154,130 @@ function RentalCard({ rental, today }: { rental: RentalRow; today: string }) {
             />
           </div>
 
-          <div className="flex flex-1 flex-col justify-between gap-4 p-5 sm:flex-row sm:items-start">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <span
-                  className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusClass(
-                    rental.reservation_status
-                  )}`}
-                >
-                  {status.label}
-                </span>
-                {timing && <span className="text-xs text-muted-foreground">{timing}</span>}
-              </div>
-
-              <h3 className="mt-2.5 font-serif text-2xl">
-                {rental.trailer?.name ?? 'Trailer reservation'}
-              </h3>
-              <p className="mt-1 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                {rental.reservation_number}
-              </p>
-
-              <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-                <CalendarDays className="h-4 w-4 shrink-0" />
-                {formatDate(rental.start_date)} – {formatDate(rental.end_date)}
-              </p>
-              <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4 shrink-0" />
-                {rental.pickup?.city ?? 'Pickup'}
-                {rental.pickup_method === 'delivery' ? ' · delivered' : ''}
-                {rental.pickup?.id !== rental.dropoff?.id && ` → ${rental.dropoff?.city ?? 'Return'}`}
-              </p>
-            </div>
-
-            <div className="flex items-end justify-between gap-5 sm:flex-col sm:items-end sm:justify-start">
-              <div className="text-left sm:text-right">
-                <p className="text-lg font-semibold tabular-nums">{formatMoney(rental.total)}</p>
-                <p className="text-xs text-muted-foreground">
-                  {paymentLabel(rental.payment_method, rental.payment_status)}
-                </p>
-              </div>
-              <span className="flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-primary group-hover:underline">
-                View details <ArrowRight className="h-4 w-4" />
+          <div className="min-w-0 flex-1 p-5">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusClass(
+                  rental.reservation_status
+                )}`}
+              >
+                {status.label}
               </span>
+              {timing && <span className="text-xs text-muted-foreground">{timing}</span>}
             </div>
+
+            <h3 className="mt-2.5 font-serif text-2xl">
+              {rental.trailer?.name ?? 'Trailer reservation'}
+            </h3>
+            <p className="mt-1 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              {rental.reservation_number}
+            </p>
+
+            <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+              <CalendarDays className="h-4 w-4 shrink-0" />
+              {formatDate(rental.start_date)} – {formatDate(rental.end_date)}
+            </p>
+            <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4 shrink-0" />
+              {rental.pickup?.city ?? 'Pickup'}
+              {rental.pickup_method === 'delivery' ? ' · delivered' : ''}
+              {rental.pickup?.id !== rental.dropoff?.id && ` → ${rental.dropoff?.city ?? 'Return'}`}
+            </p>
           </div>
-        </CardContent>
-      </Card>
-    </Link>
+        </Link>
+
+        <div className="flex items-end justify-between gap-5 border-t border-border p-5 sm:flex-col sm:items-end sm:justify-start sm:border-l sm:border-t-0">
+          <div className="text-left sm:text-right">
+            <p className="text-lg font-semibold tabular-nums">{formatMoney(rental.total)}</p>
+            <p className="text-xs text-muted-foreground">
+              {paymentLabel(rental.payment_method, rental.payment_status)}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {cancellable && <CancelRentalButton rental={rental} />}
+            <Link
+              to="/app/reservations/$reservationId"
+              params={{ reservationId: rental.id }}
+              className="flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-primary hover:underline"
+            >
+              View details <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function CancelRentalButton({ rental }: { rental: RentalRow }) {
+  const queryClient = useQueryClient()
+  const policy = usePolicy(rental.pickup_location_id)
+  const [confirming, setConfirming] = useState(false)
+  const [error, setError] = useState('')
+
+  const cancel = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('oco_cancel_reservation', {
+        p_reservation_id: rental.id,
+        p_reason: null,
+      })
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: () => {
+      setConfirming(false)
+      void queryClient.invalidateQueries({ queryKey: ['customer-reservations'] })
+      void queryClient.invalidateQueries({ queryKey: ['customer-reservation', rental.id] })
+    },
+    onError: e => setError(e instanceof Error ? e.message : 'The reservation was not cancelled.'),
+  })
+
+  if (!confirming) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          setError('')
+          setConfirming(true)
+        }}
+        className="border-destructive/40 bg-transparent text-destructive hover:bg-destructive/10"
+      >
+        Cancel
+      </Button>
+    )
+  }
+
+  return (
+    <div className="w-full max-w-xs space-y-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 sm:w-56">
+      <p className="text-xs leading-5 text-muted-foreground">
+        Free up to {policy.cancellation_notice_hours}h before pickup. Inside that window it needs
+        OCO&rsquo;s approval.
+      </p>
+      {error && (
+        <p role="alert" className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          disabled={cancel.isPending}
+          onClick={() => cancel.mutate()}
+          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        >
+          {cancel.isPending ? 'Cancelling…' : 'Yes, cancel'}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setConfirming(false)}
+          className="bg-transparent"
+        >
+          Keep it
+        </Button>
+      </div>
+    </div>
   )
 }
 
