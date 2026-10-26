@@ -7,6 +7,7 @@ import { ClientOnlyBoundary } from '@/components/ClientOnlyBoundary'
 import { AuthLoading, CustomerAuthLayout } from '@/components/CustomerAuthLayout'
 import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { supabase } from '@/lib/supabase'
+import { publicOrigin } from '@/lib/native'
 
 export const Route = createFileRoute('/forgot-password')({
   head: () => ({ meta: [{ title: 'Reset your password · OCO Trailer Rentals' }] }),
@@ -28,7 +29,7 @@ function ForgotPasswordForm() {
     setError('')
     setIsSubmitting(true)
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${publicOrigin()}/reset-password`,
     })
     if (resetError) {
       setError(getAuthErrorMessage(resetError))

@@ -30,6 +30,9 @@ function ensureRootCssImport() {
   };
 }
 
+// `npm run build:native` sets this to build the bundle the mobile apps ship.
+const NATIVE = process.env.OCO_NATIVE === '1';
+
 export default defineConfig({
   plugins: [
     ensureRootCssImport(),
@@ -40,15 +43,28 @@ export default defineConfig({
     // SSR + static prerendering, so search engines and AI crawlers (which do not
     // execute JavaScript) receive fully-rendered HTML on the first request.
     // The Start plugin MUST come before the React plugin.
-    tanstackStart({
-      prerender: {
-        enabled: true,
-        crawlLinks: true,
-        // Do not abort the build when a crawled link 404s. `crawlLinks` follows
-        // auth-gated and dynamic links too; one dead link must not destroy dist/.
-        failOnError: false,
-      },
-    }),
+    tanstackStart(
+      NATIVE
+        ? {
+            // The iOS/Android app bundles a single-page shell instead of one
+            // prerendered page per route: the app loads from the device, every
+            // route renders on the client, and unknown paths fall back to this
+            // shell. See capacitor.config.ts and docs/app-stores.md.
+            spa: {
+              enabled: true,
+              prerender: { outputPath: '/index.html', crawlLinks: false },
+            },
+          }
+        : {
+            prerender: {
+              enabled: true,
+              crawlLinks: true,
+              // Do not abort the build when a crawled link 404s. `crawlLinks` follows
+              // auth-gated and dynamic links too; one dead link must not destroy dist/.
+              failOnError: false,
+            },
+          },
+    ),
     viteReact(),
   ],
   resolve: {
@@ -85,7 +101,7 @@ export default defineConfig({
   build: {
     // Build into a temp dir; scripts/finalize-static-build.mjs then flattens
     // .vite-out/client/* into dist/, which is what Vercel serves.
-    outDir: '.vite-out',
+    outDir: NATIVE ? '.vite-out-native' : '.vite-out',
     emptyOutDir: true,
   },
 });

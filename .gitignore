@@ -31,3 +31,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Native app builds
+.vite-out-native/
+native-dist/

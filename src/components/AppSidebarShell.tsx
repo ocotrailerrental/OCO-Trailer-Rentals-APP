@@ -30,6 +30,7 @@ import {
   ShieldCheck,
   LogOut,
   PanelLeft,
+  UserRound,
 } from 'lucide-react'
 import { OcoMark } from '@/components/OcoLogo'
 import { cn } from '@/lib/utils'
@@ -64,6 +65,7 @@ const NAV_ITEMS: NavItemDef[] = [
   { href: '/app/book', icon: <CalendarPlus className="h-4 w-4" />, label: 'Book a trailer' },
   { href: '/app/reservations', icon: <ClipboardList className="h-4 w-4" />, label: 'My Rentals' },
   { href: '/app/documents', icon: <IdCard className="h-4 w-4" />, label: 'Licence & insurance' },
+  { href: '/app/account', icon: <UserRound className="h-4 w-4" />, label: 'Account' },
 ]
 
 // Shown only to staff. This is presentation, NOT access control — the admin page

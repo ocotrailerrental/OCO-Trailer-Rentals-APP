@@ -17,8 +17,9 @@
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 
-const SRC = '.vite-out/client'
-const DEST = 'dist'
+const NATIVE = process.env.OCO_NATIVE === '1'
+const SRC = NATIVE ? '.vite-out-native/client' : '.vite-out/client'
+const DEST = NATIVE ? 'native-dist' : 'dist'
 
 if (!existsSync(SRC)) {
   console.error(`[finalize] build output missing: ${SRC} — did "vite build" run?`)

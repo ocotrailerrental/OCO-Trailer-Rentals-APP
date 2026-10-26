@@ -21,6 +21,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as AppAccountRouteImport } from './routes/app/account'
 import { Route as AppAdminRouteImport } from './routes/app/admin'
 import { Route as AppBookRouteImport } from './routes/app/book'
 import { Route as AppDocumentsRouteImport } from './routes/app/documents'
@@ -88,6 +89,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAccountRoute = AppAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminRoute = AppAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -132,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/app/account': typeof AppAccountRoute
   '/app/admin': typeof AppAdminRoute
   '/app/book': typeof AppBookRoute
   '/app/documents': typeof AppDocumentsRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/app/account': typeof AppAccountRoute
   '/app/admin': typeof AppAdminRoute
   '/app/book': typeof AppBookRoute
   '/app/documents': typeof AppDocumentsRoute
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/app/account': typeof AppAccountRoute
   '/app/admin': typeof AppAdminRoute
   '/app/book': typeof AppBookRoute
   '/app/documents': typeof AppDocumentsRoute
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/support'
     | '/terms'
+    | '/app/account'
     | '/app/admin'
     | '/app/book'
     | '/app/documents'
@@ -213,6 +223,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/support'
     | '/terms'
+    | '/app/account'
     | '/app/admin'
     | '/app/book'
     | '/app/documents'
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/support'
     | '/terms'
+    | '/app/account'
     | '/app/admin'
     | '/app/book'
     | '/app/documents'
@@ -343,6 +355,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/account': {
+      id: '/app/account'
+      path: '/account'
+      fullPath: '/app/account'
+      preLoaderRoute: typeof AppAccountRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/admin': {
       id: '/app/admin'
       path: '/admin'
@@ -401,6 +420,7 @@ const AppReservationsRouteWithChildren = AppReservationsRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppAccountRoute: typeof AppAccountRoute
   AppAdminRoute: typeof AppAdminRoute
   AppBookRoute: typeof AppBookRoute
   AppDocumentsRoute: typeof AppDocumentsRoute
@@ -409,6 +429,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAccountRoute: AppAccountRoute,
   AppAdminRoute: AppAdminRoute,
   AppBookRoute: AppBookRoute,
   AppDocumentsRoute: AppDocumentsRoute,

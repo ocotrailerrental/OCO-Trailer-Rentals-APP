@@ -53,7 +53,7 @@ const QUESTIONS: { q: string; a: string }[] = [
   },
   {
     q: 'How do I delete my account?',
-    a: 'Email us from the address on your account and ask for it to be deleted. We will delete your account and personal information, except records we are required to keep for completed rentals, and confirm when it is done.',
+    a: 'In the app or on the website, sign in and open Account, then choose Delete account. This removes your login and personal details straight away. Records of rentals you have already taken are kept, as the law requires. You can also email us to ask for deletion.',
   },
 ]
 

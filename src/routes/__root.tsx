@@ -8,7 +8,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AccountCacheBoundary } from '@/components/AccountCacheBoundary'
 import { Toaster } from '@/components/ui/sonner'
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
+import { startNativeShell } from '@/lib/native'
 import { supabaseConfigError } from '@/lib/supabase'
 import indexCss from '../index.css?url'
 
@@ -58,6 +59,9 @@ export const Route = createRootRoute({
 })
 
 function RootDocument({ children }: { children: ReactNode }) {
+  // No-op on the website; in the iOS/Android app it wires up the back button,
+  // status bar and splash screen once the page has hydrated.
+  useEffect(() => { void startNativeShell() }, [])
   return (
     <html lang="en">
       <head>

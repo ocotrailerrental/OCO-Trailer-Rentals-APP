@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">OCO Trailer Rentals</string>
+    <string name="title_activity_main">OCO Trailer Rentals</string>
+    <string name="package_name">com.ocotrailerrentals.app</string>
+    <string name="custom_url_scheme">com.ocotrailerrentals.app</string>
+</resources>

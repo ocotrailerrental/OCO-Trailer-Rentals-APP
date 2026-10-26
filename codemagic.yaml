@@ -1,0 +1,92 @@
+# OCO Trailer Rentals — cloud builds for the App Store and Google Play.
+#
+# Codemagic builds the iOS app on its own Macs, so no Mac is needed here.
+# Each workflow is started by hand from the Codemagic dashboard ("Start new
+# build"), so nothing ships to a store just because code was pushed.
+#
+# One-time setup is in docs/app-stores.md:
+#   - environment group  `oco_web`      VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY,
+#                                       VITE_STRIPE_PUBLISHABLE_KEY (same values as Vercel)
+#   - environment group  `google_play`  GCLOUD_SERVICE_ACCOUNT_CREDENTIALS (Play Console API key, JSON)
+#   - App Store Connect API key integration named  `OCO App Store Connect`
+#   - Android upload keystore uploaded under Code signing as  `oco_upload`
+
+definitions:
+  web_build: &web_build
+    name: Build the app bundle
+    script: |
+      npm ci --no-audit --no-fund
+      npm run build:native
+
+workflows:
+  ios-testflight:
+    name: iOS → TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: OCO App Store Connect
+    environment:
+      groups:
+        - oco_web
+      node: 22
+      xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.ocotrailerrentals.app
+      vars:
+        APP_STORE_APPLE_ID: "" # numeric Apple ID of the app, from App Store Connect → App Information
+        APP_VERSION: 1.0.0
+    scripts:
+      - *web_build
+      - name: Apply signing profiles
+        script: xcode-project use-profiles
+      - name: Set version and build number
+        script: |
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          cd ios/App
+          agvtool new-marketing-version "$APP_VERSION"
+          agvtool new-version -all $((LATEST + 1))
+      - name: Build IPA
+        script: |
+          xcode-project build-ipa \
+            --project ios/App/App.xcodeproj \
+            --scheme App
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false
+
+  android-play-internal:
+    name: Android → Play internal testing
+    max_build_duration: 45
+    instance_type: linux_x2
+    environment:
+      groups:
+        - oco_web
+        - google_play
+      node: 22
+      java: 21
+      android_signing:
+        - oco_upload
+      vars:
+        PACKAGE_NAME: com.ocotrailerrentals.app
+        APP_VERSION: 1.0.0
+    scripts:
+      - *web_build
+      - name: Point Gradle at the Android SDK
+        script: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+      - name: Build signed App Bundle
+        script: |
+          LATEST=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" 2>/dev/null || echo 0)
+          export BUILD_NUMBER=$((LATEST + 1))
+          cd android && ./gradlew bundleRelease
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+        submit_as_draft: true
