@@ -74,6 +74,11 @@ export function SiteFooter() {
                   </a>
                 </li>
                 <li>
+                  <a href="/support" className="hover:text-sidebar-foreground">
+                    Support
+                  </a>
+                </li>
+                <li>
                   <a href="/#fleet" className="hover:text-sidebar-foreground">
                     The fleet
                   </a>

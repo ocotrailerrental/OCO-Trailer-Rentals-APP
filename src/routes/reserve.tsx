@@ -13,6 +13,8 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { CardOnFile } from '@/components/CardOnFile'
 import { money, usePolicy } from '@/lib/policy'
 import { supabase } from '@/lib/supabase'
+import { AgreementDocument } from '@/components/AgreementDocument'
+import { SignaturePad, isSigned, type SignatureValue } from '@/components/SignaturePad'
 import { fetchOwnProfile } from '@/lib/profile'
 import { Quote, fetchQuote } from '@/lib/booking'
 
@@ -29,7 +31,7 @@ type Profile = { full_name: string | null; phone: string | null }
 // where the renter lives and what they are towing with. They live on the
 // customer's own record so the agreement arrives filled in next time too.
 type Verification = { mailing_address: string | null; tow_vehicle: string | null }
-type FormValues = { name: string; email: string; phone: string; mailingAddress: string; towVehicle: string; pickupMethod: 'self_pickup' | 'delivery'; deliveryAddress: string; deliveryMiles: string; paymentMethod: 'card' | 'cash'; notes: string; agreement: boolean; discountCode: string; signature: string; pickupTime: string }
+type FormValues = { name: string; email: string; phone: string; mailingAddress: string; towVehicle: string; pickupMethod: 'self_pickup' | 'delivery'; deliveryAddress: string; deliveryMiles: string; paymentMethod: 'card' | 'cash'; notes: string; agreement: boolean; discountCode: string; signature: string; signatureMode: SignatureValue['mode']; signatureImage: string | null; pickupTime: string }
 
 /**
  * The only parts of the rental agreement the database cannot work out on its own.
@@ -48,6 +50,13 @@ function agreementFields(values: Pick<FormValues, 'mailingAddress' | 'towVehicle
   }
 }
 
+/** The calendar day after an ISO date. Due back is always the day after the last billed day. */
+function dayAfter(isoDate: string) {
+  const [y, m, d] = isoDate.split('-').map(Number)
+  const next = new Date(Date.UTC(y, m - 1, d + 1))
+  return next.toISOString().slice(0, 10)
+}
+
 /** Lets the agreement follow what is being typed without re-rendering it per keystroke. */
 function useSettled<T>(value: T, delay = 500): T {
   const [settled, setSettled] = useState(value)
@@ -64,7 +73,7 @@ function ReservationForm() {
   const [authChecking, setAuthChecking] = useState(true)
   const [userId, setUserId] = useState('')
   const [authError, setAuthError] = useState('')
-  const [values, setValues] = useState<FormValues>({ name: '', email: '', phone: '', mailingAddress: '', towVehicle: '', pickupMethod: search.delivery ? 'delivery' : 'self_pickup', deliveryAddress: '', deliveryMiles: '', paymentMethod: 'card', notes: '', agreement: false, discountCode: '', signature: '', pickupTime: '09:00' })
+  const [values, setValues] = useState<FormValues>({ name: '', email: '', phone: '', mailingAddress: '', towVehicle: '', pickupMethod: search.delivery ? 'delivery' : 'self_pickup', deliveryAddress: '', deliveryMiles: '', paymentMethod: 'card', notes: '', agreement: false, discountCode: '', signature: '', signatureMode: 'draw', signatureImage: null, pickupTime: '09:00' })
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   // The code the customer has actually applied, as opposed to what they are
@@ -176,7 +185,7 @@ function ReservationForm() {
     if (!values.towVehicle.trim()) return setSubmitError('Tell us the vehicle you will tow with.')
     if (values.pickupMethod === 'delivery' && (!values.deliveryAddress.trim() || Number(values.deliveryMiles) < 0)) return setSubmitError('Enter a delivery address and a valid estimated mileage.')
     if (!values.agreement) return setSubmitError('Read and accept the rental agreement before submitting.')
-    if (!values.signature.trim()) return setSubmitError('Type your full name to sign the rental agreement.')
+    if (!isSigned({ name: values.signature, mode: values.signatureMode, image: values.signatureImage })) return setSubmitError(values.signature.trim() ? 'Sign in the customer signature box, or choose Type to sign with your name.' : 'Print your full legal name in the signature block.')
     // The quote is what the customer is agreeing to pay. If it has not arrived,
     // or came back an error, there is no price to agree to — booking anyway would
     // charge against a figure nobody ever saw.
@@ -197,7 +206,7 @@ function ReservationForm() {
       p_trailer_id: trailer.id, p_pickup_location_id: search.pickupLocationId, p_return_location_id: search.returnLocationId, p_start_date: search.startDate, p_end_date: search.endDate,
       p_customer_name: values.name.trim(), p_customer_email: values.email.trim(), p_customer_phone: values.phone.trim(), p_pickup_method: values.pickupMethod, p_payment_method: values.paymentMethod,
       p_delivery_address: values.pickupMethod === 'delivery' ? values.deliveryAddress.trim() : null, p_delivery_miles: values.pickupMethod === 'delivery' ? Number(values.deliveryMiles) || 0 : 0, p_customer_notes: values.notes.trim() || null, p_discount_code: appliedCode || null, p_pickup_time: values.pickupTime,
-      p_fields: agreementFields(values), p_signature_name: values.signature.trim(), p_signature_image: null,
+      p_fields: agreementFields(values), p_signature_name: values.signature.trim(), p_signature_image: values.signatureMode === 'draw' ? values.signatureImage : null,
       p_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
     })
     if (error) { setSubmitError(isAvailabilityError(error.message) ? 'Availability changed while you were deciding. Search again to choose a current trailer.' : error.message); setIsSubmitting(false); return }
@@ -213,7 +222,7 @@ function ReservationForm() {
     await navigate({ to: '/app/reservations/$reservationId', params: { reservationId: created.id } })
   }
 
-  return <main className="min-h-dvh bg-background"><div className="border-b border-border bg-sidebar text-sidebar-foreground"><div className="mx-auto max-w-6xl px-5 py-7 lg:px-8"><button onClick={() => navigate({ to: '/book', search })} className="mb-6 flex items-center gap-2 text-sm text-sidebar-foreground/70 hover:text-sidebar-foreground"><ArrowLeft className="h-4 w-4" /> Back to availability</button><p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Complete your reservation</p><h1 className="mt-3 font-serif text-4xl">Reserve {trailer.name}.</h1><p className="mt-3 flex flex-wrap items-center gap-3 text-sm text-sidebar-foreground/70"><MapPin className="h-4 w-4 text-primary" /> {pickup?.name ?? 'Pickup location'} → {dropoff?.name ?? 'Return location'} · {formatDate(search.startDate)} – {formatDate(search.endDate)} · {days} billable day{days === 1 ? '' : 's'}</p></div></div><div className="mx-auto grid max-w-6xl gap-8 px-5 py-10 lg:grid-cols-[1fr_0.75fr] lg:px-8"><form onSubmit={submit} className="space-y-6"><Card><CardHeader><CardTitle className="font-serif text-2xl">Customer details</CardTitle></CardHeader><CardContent className="grid gap-4 sm:grid-cols-2"><div className="space-y-2 sm:col-span-2"><Label htmlFor="customer-name">Full name</Label><Input id="customer-name" required value={values.name} onChange={event => update({ name: event.target.value })} /></div><div className="space-y-2"><Label htmlFor="customer-email">Email</Label><Input id="customer-email" type="email" required value={values.email} onChange={event => update({ email: event.target.value })} /></div><div className="space-y-2"><Label htmlFor="customer-phone">Phone</Label><Input id="customer-phone" type="tel" required value={values.phone} onChange={event => update({ phone: event.target.value })} /></div><div className="space-y-2 sm:col-span-2"><Label htmlFor="customer-address">Mailing address</Label><Input id="customer-address" required value={values.mailingAddress} onChange={event => update({ mailingAddress: event.target.value })} placeholder="Street, city, state, ZIP" /></div><div className="space-y-2 sm:col-span-2"><Label htmlFor="tow-vehicle">Tow vehicle</Label><Input id="tow-vehicle" required value={values.towVehicle} onChange={event => update({ towVehicle: event.target.value })} placeholder="Year, make, model and plate" /><p className="text-xs leading-5 text-muted-foreground">These two appear on the rental agreement. We keep them on your account, so your next booking arrives already filled in.</p></div></CardContent></Card><Card><CardHeader><CardTitle className="font-serif text-2xl">Pickup and payment</CardTitle></CardHeader><CardContent className="space-y-5"><fieldset><legend className="mb-3 text-sm font-medium">Pickup method</legend><div className="grid gap-3 sm:grid-cols-2"><Choice checked={values.pickupMethod === 'self_pickup'} label="Customer pickup" onClick={() => update({ pickupMethod: 'self_pickup' })} /><Choice checked={values.pickupMethod === 'delivery'} label={isSameDay ? 'Paid delivery (not on same-day rentals)' : 'Paid delivery'} disabled={isSameDay} onClick={() => update({ pickupMethod: 'delivery' })} /></div>{isSameDay && <p className="mt-3 text-xs leading-5 text-muted-foreground">Same-day rentals are collection only &mdash; there is not enough of a window to deliver and recover the trailer in one day.</p>}</fieldset>{values.pickupMethod === 'delivery' && <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2 sm:col-span-2"><Label htmlFor="delivery-address">Delivery address</Label><Input id="delivery-address" required value={values.deliveryAddress} onChange={event => update({ deliveryAddress: event.target.value })} placeholder="Enter the delivery address" /></div><div className="space-y-2"><Label htmlFor="delivery-miles">Estimated delivery miles</Label><Input id="delivery-miles" type="number" min="0" step="0.1" required value={values.deliveryMiles} onChange={event => update({ deliveryMiles: event.target.value })} placeholder="0" /></div><p className="self-end text-xs leading-5 text-muted-foreground">Delivery is charged at {money(policy.delivery_rate_per_mile)} per mile, calculated from the mileage you enter.</p></div>}<fieldset><legend className="mb-3 text-sm font-medium">Payment method</legend><div className="grid gap-3 sm:grid-cols-2"><Choice checked={values.paymentMethod === 'card'} label="Card" onClick={() => update({ paymentMethod: 'card' })} /><Choice checked={values.paymentMethod === 'cash'} label="Cash at pickup" onClick={() => update({ paymentMethod: 'cash' })} /></div></fieldset><div className="space-y-2"><Label htmlFor="pickup-time">What time will you collect?</Label><Input id="pickup-time" type="time" required min="06:00" max="20:00" value={values.pickupTime} onChange={event => update({ pickupTime: event.target.value })} className="sm:max-w-xs" /><p className="text-xs leading-5 text-muted-foreground">{isSameDay ? <>The trailer is due back at this same time tomorrow — a full 24 hours.</> : <>The trailer is due back at this same time on {formatDate(search.endDate)}, your return date.</>} After a {policy.late_grace_minutes}-minute grace period, every hour late adds {money(policy.late_fee_per_hour)} — so pick the time you really expect to arrive. Yards take collections between 6am and 8pm.</p></div><div className="space-y-2"><Label htmlFor="customer-notes">Notes (optional)</Label><Input id="customer-notes" value={values.notes} onChange={event => update({ notes: event.target.value })} placeholder="Anything the local team should know?" /></div></CardContent></Card>{values.paymentMethod === 'card' && <CardOnFile />}<DiscountField value={values.discountCode} applied={appliedCode} quote={quoteQuery.data ?? null} onChange={code => update({ discountCode: code })} onApply={() => setAppliedCode(values.discountCode.trim().toUpperCase())} onClear={() => { update({ discountCode: '' }); setAppliedCode('') }} /><AgreementCard accepted={values.agreement} signature={values.signature} onAccept={next => update({ agreement: next })} onSign={name => update({ signature: name })} context={{ trailerId: trailer.id, pickupLocationId: search.pickupLocationId, returnLocationId: search.returnLocationId, startDate: search.startDate, endDate: search.endDate, pickupTime: values.pickupTime, pickupMethod: values.pickupMethod, paymentMethod: values.paymentMethod, deliveryAddress: values.pickupMethod === 'delivery' ? values.deliveryAddress.trim() || null : null, deliveryMiles: values.pickupMethod === 'delivery' ? Number(values.deliveryMiles) || 0 : 0, discountCode: appliedCode || null, name: values.name.trim(), email: values.email.trim(), phone: values.phone.trim(), mailingAddress: values.mailingAddress, towVehicle: values.towVehicle, signature: values.signature }} /><Card><CardContent className="space-y-4 p-6">{submitError && <div role="alert" className="flex gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"><CircleAlert className="h-4 w-4 shrink-0" />{submitError}</div>}<Button type="submit" disabled={isSubmitting} className="h-12 w-full bg-primary text-primary-foreground hover:bg-primary/90">{isSubmitting ? 'Submitting request…' : 'Submit reservation request'}</Button><p className="flex items-center justify-center gap-2 text-center text-xs text-muted-foreground"><LockKeyhole className="h-3.5 w-3.5" /> Card details go to our payment provider, never to OCO.</p></CardContent></Card></form><aside className="space-y-6"><QuoteCard trailer={trailer} search={search} estimate={estimate} quote={quoteQuery.data ?? null} deliveryMiles={Number(values.deliveryMiles) || 0} /><Card className="border-primary/20 bg-primary/5"><CardContent className="p-5 text-sm leading-6"><div className="flex gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" /><p><strong>This is what you will be charged.</strong> The total is recalculated when you submit, using exactly the figures shown here. {values.paymentMethod === 'cash' ? 'Cash remains due until an authorized OCO team member records collection.' : 'Your card is charged when you collect the trailer, not now. The deposit is held separately and released when it comes back undamaged.'}</p></div></CardContent></Card></aside></div><SiteFooter /></main>
+  return <main className="min-h-dvh bg-background"><div className="border-b border-border bg-sidebar text-sidebar-foreground"><div className="mx-auto max-w-6xl px-5 py-7 lg:px-8"><button onClick={() => navigate({ to: '/book', search })} className="mb-6 flex items-center gap-2 text-sm text-sidebar-foreground/70 hover:text-sidebar-foreground"><ArrowLeft className="h-4 w-4" /> Back to availability</button><p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Complete your reservation</p><h1 className="mt-3 font-serif text-4xl">Reserve {trailer.name}.</h1><p className="mt-3 flex flex-wrap items-center gap-3 text-sm text-sidebar-foreground/70"><MapPin className="h-4 w-4 text-primary" /> {pickup?.name ?? 'Pickup location'} → {dropoff?.name ?? 'Return location'} · {formatDate(search.startDate)} – {formatDate(search.endDate)} · {days} billable day{days === 1 ? '' : 's'}</p></div></div><div className="mx-auto grid max-w-6xl gap-8 px-5 py-10 lg:grid-cols-[1fr_0.75fr] lg:px-8"><form onSubmit={submit} className="space-y-6"><Card><CardHeader><CardTitle className="font-serif text-2xl">Customer details</CardTitle></CardHeader><CardContent className="grid gap-4 sm:grid-cols-2"><div className="space-y-2 sm:col-span-2"><Label htmlFor="customer-name">Full name</Label><Input id="customer-name" required value={values.name} onChange={event => update({ name: event.target.value })} /></div><div className="space-y-2"><Label htmlFor="customer-email">Email</Label><Input id="customer-email" type="email" required value={values.email} onChange={event => update({ email: event.target.value })} /></div><div className="space-y-2"><Label htmlFor="customer-phone">Phone</Label><Input id="customer-phone" type="tel" required value={values.phone} onChange={event => update({ phone: event.target.value })} /></div><div className="space-y-2 sm:col-span-2"><Label htmlFor="customer-address">Mailing address</Label><Input id="customer-address" required value={values.mailingAddress} onChange={event => update({ mailingAddress: event.target.value })} placeholder="Street, city, state, ZIP" /></div><div className="space-y-2 sm:col-span-2"><Label htmlFor="tow-vehicle">Tow vehicle</Label><Input id="tow-vehicle" required value={values.towVehicle} onChange={event => update({ towVehicle: event.target.value })} placeholder="Year, make, model and plate" /><p className="text-xs leading-5 text-muted-foreground">These two appear on the rental agreement. We keep them on your account, so your next booking arrives already filled in.</p></div></CardContent></Card><Card><CardHeader><CardTitle className="font-serif text-2xl">Pickup and payment</CardTitle></CardHeader><CardContent className="space-y-5"><fieldset><legend className="mb-3 text-sm font-medium">Pickup method</legend><div className="grid gap-3 sm:grid-cols-2"><Choice checked={values.pickupMethod === 'self_pickup'} label="Customer pickup" onClick={() => update({ pickupMethod: 'self_pickup' })} /><Choice checked={values.pickupMethod === 'delivery'} label={isSameDay ? 'Paid delivery (not on same-day rentals)' : 'Paid delivery'} disabled={isSameDay} onClick={() => update({ pickupMethod: 'delivery' })} /></div>{isSameDay && <p className="mt-3 text-xs leading-5 text-muted-foreground">Same-day rentals are collection only &mdash; there is not enough of a window to deliver and recover the trailer in one day.</p>}</fieldset>{values.pickupMethod === 'delivery' && <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2 sm:col-span-2"><Label htmlFor="delivery-address">Delivery address</Label><Input id="delivery-address" required value={values.deliveryAddress} onChange={event => update({ deliveryAddress: event.target.value })} placeholder="Enter the delivery address" /></div><div className="space-y-2"><Label htmlFor="delivery-miles">Estimated delivery miles</Label><Input id="delivery-miles" type="number" min="0" step="0.1" required value={values.deliveryMiles} onChange={event => update({ deliveryMiles: event.target.value })} placeholder="0" /></div><p className="self-end text-xs leading-5 text-muted-foreground">Delivery is charged at {money(policy.delivery_rate_per_mile)} per mile, calculated from the mileage you enter.</p></div>}<fieldset><legend className="mb-3 text-sm font-medium">Payment method</legend><div className="grid gap-3 sm:grid-cols-2"><Choice checked={values.paymentMethod === 'card'} label="Card" onClick={() => update({ paymentMethod: 'card' })} /><Choice checked={values.paymentMethod === 'cash'} label="Cash at pickup" onClick={() => update({ paymentMethod: 'cash' })} /></div></fieldset><div className="space-y-2"><Label htmlFor="pickup-time">What time will you collect?</Label><Input id="pickup-time" type="time" required min="06:00" max="20:00" value={values.pickupTime} onChange={event => update({ pickupTime: event.target.value })} className="sm:max-w-xs" /><p className="text-xs leading-5 text-muted-foreground">{isSameDay ? <>The trailer is due back at this same time tomorrow — a full 24 hours.</> : <>The trailer is due back at this same time on {formatDate(dayAfter(search.endDate))}, the day after your last billed day.</>} After a {policy.late_grace_minutes}-minute grace period, every hour late adds {money(policy.late_fee_per_hour)} — so pick the time you really expect to arrive. Yards take collections between 6am and 8pm.</p></div><div className="space-y-2"><Label htmlFor="customer-notes">Notes (optional)</Label><Input id="customer-notes" value={values.notes} onChange={event => update({ notes: event.target.value })} placeholder="Anything the local team should know?" /></div></CardContent></Card>{values.paymentMethod === 'card' && <CardOnFile />}<DiscountField value={values.discountCode} applied={appliedCode} quote={quoteQuery.data ?? null} onChange={code => update({ discountCode: code })} onApply={() => setAppliedCode(values.discountCode.trim().toUpperCase())} onClear={() => { update({ discountCode: '' }); setAppliedCode('') }} /><AgreementCard accepted={values.agreement} signature={{ name: values.signature, mode: values.signatureMode, image: values.signatureImage }} onAccept={next => update({ agreement: next })} onSign={next => update({ signature: next.name, signatureMode: next.mode, signatureImage: next.image })} context={{ trailerId: trailer.id, pickupLocationId: search.pickupLocationId, returnLocationId: search.returnLocationId, startDate: search.startDate, endDate: search.endDate, pickupTime: values.pickupTime, pickupMethod: values.pickupMethod, paymentMethod: values.paymentMethod, deliveryAddress: values.pickupMethod === 'delivery' ? values.deliveryAddress.trim() || null : null, deliveryMiles: values.pickupMethod === 'delivery' ? Number(values.deliveryMiles) || 0 : 0, discountCode: appliedCode || null, name: values.name.trim(), email: values.email.trim(), phone: values.phone.trim(), mailingAddress: values.mailingAddress, towVehicle: values.towVehicle, signature: values.signature }} /><Card><CardContent className="space-y-4 p-6">{submitError && <div role="alert" className="flex gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"><CircleAlert className="h-4 w-4 shrink-0" />{submitError}</div>}<Button type="submit" disabled={isSubmitting} className="h-12 w-full bg-primary text-primary-foreground hover:bg-primary/90">{isSubmitting ? 'Submitting request…' : 'Submit reservation request'}</Button><p className="flex items-center justify-center gap-2 text-center text-xs text-muted-foreground"><LockKeyhole className="h-3.5 w-3.5" /> Card details go to our payment provider, never to OCO.</p></CardContent></Card></form><aside className="space-y-6"><QuoteCard trailer={trailer} search={search} estimate={estimate} quote={quoteQuery.data ?? null} deliveryMiles={Number(values.deliveryMiles) || 0} /><Card className="border-primary/20 bg-primary/5"><CardContent className="p-5 text-sm leading-6"><div className="flex gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" /><p><strong>This is what you will be charged.</strong> The total is recalculated when you submit, using exactly the figures shown here. {values.paymentMethod === 'cash' ? 'Cash remains due until an authorized OCO team member records collection.' : 'Your card is charged when you collect the trailer, not now. The deposit is held separately and released when it comes back undamaged.'}</p></div></CardContent></Card></aside></div><SiteFooter /></main>
 }
 
 function QuoteCard({ trailer, search, estimate, quote, deliveryMiles }: { trailer: Trailer; search: BookingSearch; estimate: ReturnType<typeof rentalEstimate>; quote: Quote | null; deliveryMiles: number }) {
@@ -360,14 +369,14 @@ function DiscountField({ value, applied, quote, onChange, onApply, onClear }: {
  * rental agreement" — which told the customer the opposite of what an agreement is
  * for, and left no record of what anyone had agreed to.
  *
- * The typed name is a signature of intent, not a substitute for the paper copy
- * signed at collection. Both are the same document.
+ * The customer signs in the agreement's own Customer Signature block — drawn or
+ * typed — and OCO countersigns the same document at collection.
  */
 function AgreementCard({ accepted, signature, onAccept, onSign, context }: {
   accepted: boolean
-  signature: string
+  signature: SignatureValue
   onAccept: (next: boolean) => void
-  onSign: (name: string) => void
+  onSign: (next: SignatureValue) => void
   context: {
     trailerId: string; pickupLocationId: string; returnLocationId: string
     startDate: string; endDate: string; pickupTime: string; pickupMethod: string
@@ -410,13 +419,29 @@ function AgreementCard({ accepted, signature, onAccept, onSign, context }: {
     },
   })
 
+  // The checkbox stays locked until the customer has reached the end of the
+  // document. A sentinel at the bottom is watched rather than scroll offsets,
+  // because scrollTop inside a nested container is unreliable on iOS Safari.
+  const [readToEnd, setReadToEnd] = useState(false)
+  const [sentinel, setSentinel] = useState<HTMLDivElement | null>(null)
+  useEffect(() => {
+    if (!sentinel || readToEnd) return
+    const observer = new IntersectionObserver(
+      entries => { if (entries.some(entry => entry.isIntersecting)) setReadToEnd(true) },
+      { root: sentinel.parentElement, threshold: 0 },
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [sentinel, readToEnd])
+
   const agreement = agreementQuery.data
+  const signedToday = new Date().toISOString()
   return (
     <Card>
       <CardHeader>
         <CardTitle className="font-serif text-2xl">Rental agreement</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         {agreementQuery.isLoading && (
           <p className="text-sm text-muted-foreground">Loading the agreement…</p>
         )}
@@ -427,13 +452,33 @@ function AgreementCard({ accepted, signature, onAccept, onSign, context }: {
         )}
         {agreement && (
           <>
-            <div className="max-h-72 overflow-y-auto rounded-lg border border-border bg-secondary/30 p-4 text-sm leading-6">
-              <AgreementBody markdown={agreement.body} />
+            <div
+              tabIndex={0}
+              aria-label="Rental agreement text. Scroll to the end to continue."
+              className="max-h-96 overflow-y-auto rounded-lg border border-border bg-secondary/30 p-4 text-sm leading-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <AgreementDocument
+                markdown={agreement.body}
+                customer={{
+                  name: signature.name,
+                  image: signature.mode === 'draw' ? signature.image : null,
+                  signedAt: isSigned(signature) ? signedToday : null,
+                }}
+              />
+              <div ref={setSentinel} aria-hidden className="h-px" />
             </div>
-            <label className="flex cursor-pointer gap-3 text-sm leading-6">
+            {!readToEnd && (
+              <p className="text-xs text-muted-foreground" aria-live="polite">
+                Scroll to the end of the agreement to sign it.
+              </p>
+            )}
+            <SignaturePad value={signature} onChange={onSign} disabled={!readToEnd} />
+            <label className={`flex gap-3 text-sm leading-6 ${readToEnd ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}>
               <input
                 type="checkbox"
                 checked={accepted}
+                disabled={!readToEnd}
+                aria-describedby={readToEnd ? undefined : 'agreement-locked'}
                 onChange={event => onAccept(event.target.checked)}
                 className="mt-1 h-4 w-4 shrink-0 accent-primary"
               />
@@ -441,57 +486,15 @@ function AgreementCard({ accepted, signature, onAccept, onSign, context }: {
               {agreement.version}). I understand OCO provides no towing instruction and that I am
               responsible for towing safely and for damage while the trailer is in my possession.
             </label>
-            <div className="space-y-2">
-              <Label htmlFor="agreement-signature">Type your full name to sign</Label>
-              <Input
-                id="agreement-signature"
-                value={signature}
-                onChange={event => onSign(event.target.value)}
-                placeholder="Your full legal name"
-              />
-              <p className="text-xs leading-5 text-muted-foreground">
-                Every other field above is filled in from your account — your name, contact,
-                address, licence, insurance, the trailer and the price. Typing your name is the
-                only thing this agreement needs from you, and your initials appear in the
-                acknowledgment blocks as you type it. You will sign the same document on paper
-                when you collect the trailer.
-              </p>
-            </div>
+            {!readToEnd && <span id="agreement-locked" className="sr-only">Locked until you scroll to the end of the agreement.</span>}
+            <p className="text-xs leading-5 text-muted-foreground">
+              Every other field in the agreement is filled in from your account and this booking.
+              Your initials in the acknowledgment blocks are taken from your printed name. OCO
+              countersigns this same document when you collect the trailer.
+            </p>
           </>
         )}
       </CardContent>
     </Card>
   )
 }
-
-/**
- * Minimal renderer for the agreement's stored markdown — headings, bold and
- * paragraphs. Deliberately not a markdown library: the text is written by an
- * administrator and rendering it as HTML would turn the agreement editor into a
- * way to inject script into a checkout page.
- */
-function AgreementBody({ markdown }: { markdown: string }) {
-  const blocks = markdown.split(/\n{2,}/)
-  return (
-    <div className="space-y-3">
-      {blocks.map((block, index) => {
-        const heading = block.match(/^#{1,6}\s+(.*)$/)
-        if (heading) {
-          return (
-            <h3 key={index} className="font-serif text-base font-semibold">
-              {stripEmphasis(heading[1])}
-            </h3>
-          )
-        }
-        if (block.trim() === '---') return <hr key={index} className="border-border" />
-        return (
-          <p key={index} className="text-muted-foreground">
-            {stripEmphasis(block)}
-          </p>
-        )
-      })}
-    </div>
-  )
-}
-
-const stripEmphasis = (text: string) => text.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')

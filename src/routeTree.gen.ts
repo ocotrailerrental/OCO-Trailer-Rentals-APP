@@ -9,24 +9,35 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ReserveRouteImport } from './routes/reserve'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as BookRouteImport } from './routes/book'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
-import { Route as AppReservationsRouteImport } from './routes/app/reservations'
-import { Route as AppReservationsReservationIdRouteImport } from './routes/app/reservations.$reservationId'
 import { Route as TrailersSlugRouteImport } from './routes/trailers.$slug'
-import { Route as AppBookRouteImport } from './routes/app/book'
+import { Route as AppReservationsRouteImport } from './routes/app/reservations'
 import { Route as AppDocumentsRouteImport } from './routes/app/documents'
+import { Route as AppBookRouteImport } from './routes/app/book'
 import { Route as AppAdminRouteImport } from './routes/app/admin'
+import { Route as AppReservationsReservationIdRouteImport } from './routes/app/reservations.$reservationId'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -40,6 +51,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const ReserveRoute = ReserveRouteImport.update({
   id: '/reserve',
   path: '/reserve',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -57,21 +73,6 @@ const BookRoute = BookRouteImport.update({
   path: '/book',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TrailersSlugRoute = TrailersSlugRouteImport.update({
-  id: '/trailers/$slug',
-  path: '/trailers/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AppRoute = AppRouteImport.update({
   id: '/app',
   path: '/app',
@@ -87,14 +88,14 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAdminRoute = AppAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AppRoute,
+const TrailersSlugRoute = TrailersSlugRouteImport.update({
+  id: '/trailers/$slug',
+  path: '/trailers/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppBookRoute = AppBookRouteImport.update({
-  id: '/book',
-  path: '/book',
+const AppReservationsRoute = AppReservationsRouteImport.update({
+  id: '/reservations',
+  path: '/reservations',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDocumentsRoute = AppDocumentsRouteImport.update({
@@ -102,9 +103,14 @@ const AppDocumentsRoute = AppDocumentsRouteImport.update({
   path: '/documents',
   getParentRoute: () => AppRoute,
 } as any)
-const AppReservationsRoute = AppReservationsRouteImport.update({
-  id: '/reservations',
-  path: '/reservations',
+const AppBookRoute = AppBookRouteImport.update({
+  id: '/book',
+  path: '/book',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
 const AppReservationsReservationIdRoute =
@@ -118,36 +124,38 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/book': typeof BookRoute
-  '/terms': typeof TermsRoute
-  '/privacy': typeof PrivacyRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
   '/reserve': typeof ReserveRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/trailers/$slug': typeof TrailersSlugRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/app/admin': typeof AppAdminRoute
   '/app/book': typeof AppBookRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/reservations': typeof AppReservationsRouteWithChildren
+  '/trailers/$slug': typeof TrailersSlugRoute
   '/app/': typeof AppIndexRoute
   '/app/reservations/$reservationId': typeof AppReservationsReservationIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/book': typeof BookRoute
-  '/terms': typeof TermsRoute
-  '/privacy': typeof PrivacyRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
   '/reserve': typeof ReserveRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/trailers/$slug': typeof TrailersSlugRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/app/admin': typeof AppAdminRoute
   '/app/book': typeof AppBookRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/reservations': typeof AppReservationsRouteWithChildren
+  '/trailers/$slug': typeof TrailersSlugRoute
   '/app': typeof AppIndexRoute
   '/app/reservations/$reservationId': typeof AppReservationsReservationIdRoute
 }
@@ -156,18 +164,19 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/book': typeof BookRoute
-  '/terms': typeof TermsRoute
-  '/privacy': typeof PrivacyRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
   '/reserve': typeof ReserveRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/trailers/$slug': typeof TrailersSlugRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/app/admin': typeof AppAdminRoute
   '/app/book': typeof AppBookRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/reservations': typeof AppReservationsRouteWithChildren
+  '/trailers/$slug': typeof TrailersSlugRoute
   '/app/': typeof AppIndexRoute
   '/app/reservations/$reservationId': typeof AppReservationsReservationIdRoute
 }
@@ -177,36 +186,38 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/book'
-    | '/terms'
-    | '/privacy'
     | '/forgot-password'
     | '/login'
+    | '/privacy'
     | '/reserve'
     | '/reset-password'
     | '/signup'
-    | '/trailers/$slug'
+    | '/support'
+    | '/terms'
     | '/app/admin'
     | '/app/book'
     | '/app/documents'
     | '/app/reservations'
+    | '/trailers/$slug'
     | '/app/'
     | '/app/reservations/$reservationId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/book'
-    | '/terms'
-    | '/privacy'
     | '/forgot-password'
     | '/login'
+    | '/privacy'
     | '/reserve'
     | '/reset-password'
     | '/signup'
-    | '/trailers/$slug'
+    | '/support'
+    | '/terms'
     | '/app/admin'
     | '/app/book'
     | '/app/documents'
     | '/app/reservations'
+    | '/trailers/$slug'
     | '/app'
     | '/app/reservations/$reservationId'
   id:
@@ -214,18 +225,19 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/book'
-    | '/terms'
-    | '/privacy'
     | '/forgot-password'
     | '/login'
+    | '/privacy'
     | '/reserve'
     | '/reset-password'
     | '/signup'
-    | '/trailers/$slug'
+    | '/support'
+    | '/terms'
     | '/app/admin'
     | '/app/book'
     | '/app/documents'
     | '/app/reservations'
+    | '/trailers/$slug'
     | '/app/'
     | '/app/reservations/$reservationId'
   fileRoutesById: FileRoutesById
@@ -234,18 +246,33 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   BookRoute: typeof BookRoute
-  TermsRoute: typeof TermsRoute
-  PrivacyRoute: typeof PrivacyRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
+  PrivacyRoute: typeof PrivacyRoute
   ReserveRoute: typeof ReserveRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  SupportRoute: typeof SupportRoute
+  TermsRoute: typeof TermsRoute
   TrailersSlugRoute: typeof TrailersSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -265,6 +292,13 @@ declare module '@tanstack/react-router' {
       path: '/reserve'
       fullPath: '/reserve'
       preLoaderRoute: typeof ReserveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -288,20 +322,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/app': {
       id: '/app'
       path: '/app'
@@ -316,13 +336,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/trailers/$slug': {
-      id: '/trailers/$slug'
-      path: '/trailers/$slug'
-      fullPath: '/trailers/$slug'
-      preLoaderRoute: typeof TrailersSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/app/': {
       id: '/app/'
       path: '/'
@@ -330,18 +343,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/admin': {
-      id: '/app/admin'
-      path: '/admin'
-      fullPath: '/app/admin'
-      preLoaderRoute: typeof AppAdminRouteImport
-      parentRoute: typeof AppRoute
+    '/trailers/$slug': {
+      id: '/trailers/$slug'
+      path: '/trailers/$slug'
+      fullPath: '/trailers/$slug'
+      preLoaderRoute: typeof TrailersSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/app/book': {
-      id: '/app/book'
-      path: '/book'
-      fullPath: '/app/book'
-      preLoaderRoute: typeof AppBookRouteImport
+    '/app/reservations': {
+      id: '/app/reservations'
+      path: '/reservations'
+      fullPath: '/app/reservations'
+      preLoaderRoute: typeof AppReservationsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/documents': {
@@ -351,11 +364,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDocumentsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/reservations': {
-      id: '/app/reservations'
-      path: '/reservations'
-      fullPath: '/app/reservations'
-      preLoaderRoute: typeof AppReservationsRouteImport
+    '/app/book': {
+      id: '/app/book'
+      path: '/book'
+      fullPath: '/app/book'
+      preLoaderRoute: typeof AppBookRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/reservations/$reservationId': {
@@ -402,13 +422,14 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   BookRoute: BookRoute,
-  TermsRoute: TermsRoute,
-  PrivacyRoute: PrivacyRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
+  PrivacyRoute: PrivacyRoute,
   ReserveRoute: ReserveRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  SupportRoute: SupportRoute,
+  TermsRoute: TermsRoute,
   TrailersSlugRoute: TrailersSlugRoute,
 }
 export const routeTree = rootRouteImport
