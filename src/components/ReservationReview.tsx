@@ -4,6 +4,7 @@ import {
   CalendarDays,
   Camera,
   CircleAlert,
+  CircleSlash,
   FileText,
   IdCard,
   MapPin,
@@ -46,6 +47,8 @@ export function ReservationReview({
   const [error, setError] = useState('')
   const [inspecting, setInspecting] = useState<'pickup' | 'return' | null>(null)
   const [showNoShow, setShowNoShow] = useState(false)
+  const [showCancel, setShowCancel] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
 
   const trailer = data.trailers.find(item => item.id === reservation.trailer_id)
   const pickup = data.locations.find(item => item.id === reservation.pickup_location_id)
@@ -114,6 +117,31 @@ export function ReservationReview({
     onSuccess: () => { refresh(); onClose() },
     onError: e => setError(e instanceof Error ? e.message : 'The no-show was not recorded.'),
   })
+  /**
+   * Staff cancelling a booking that has already been approved.
+   *
+   * Until this existed, the only way out of a confirmed rental from this console
+   * was to record a no-show — which charges the customer a fee and puts a lie on
+   * the record when they had simply rung up to cancel. Declining is offered only
+   * while a booking is still pending, so once it was approved there was no
+   * honest way to close it.
+   *
+   * Any deposit hold is released first: cancelling a rental while still holding
+   * money against someone's card is not a thing to leave to memory.
+   */
+  const cancelRental = useMutation({
+    mutationFn: async () => {
+      if (reservation.deposit_hold_status === 'requires_capture') {
+        await callPayments('settle-deposit', { reservation_id: reservation.id, action: 'release' })
+      }
+      await runRpc('oco_cancel_reservation', {
+        p_reservation_id: reservation.id,
+        p_reason: cancelReason.trim() || null,
+      })
+    },
+    onSuccess: () => { refresh(); onClose() },
+    onError: e => setError(e instanceof Error ? e.message : 'The cancellation did not go through.'),
+  })
   const collect = useMutation({
     mutationFn: () => runRpc('oco_mark_picked_up', { p_reservation_id: reservation.id }),
     onSuccess: refresh,
@@ -128,7 +156,7 @@ export function ReservationReview({
   const status = reservation.reservation_status.toLowerCase()
   const busy =
     approve.isPending || decline.isPending || collect.isPending || complete.isPending ||
-    noShow.isPending
+    noShow.isPending || cancelRental.isPending
 
   const inspectionFor = (type: string) => inspections.find(item => item.inspection_type === type)
   const pickupDone = Boolean(inspectionFor('pickup')?.completed_at)
@@ -333,7 +361,7 @@ export function ReservationReview({
         )}
 
         <div className="flex flex-wrap gap-3 border-t border-border pt-5">
-          {status === 'pending' && !showDecline && !showNoShow && (
+          {status === 'pending' && !showDecline && !showNoShow && !showCancel && (
             <>
               <Button
                 disabled={busy}
@@ -396,18 +424,61 @@ export function ReservationReview({
             </div>
           )}
 
-          {['pending', 'confirmed'].includes(status) && !showDecline && !showNoShow && (
-            <Button
-              variant="outline"
-              disabled={busy}
-              onClick={() => { setError(''); setShowNoShow(true) }}
-              className="gap-2 bg-transparent"
-            >
-              <UserX className="h-4 w-4" /> No-show
-            </Button>
+          {showCancel && (
+            <div className="w-full space-y-3">
+              <p className="text-sm">
+                Cancel {reservation.reservation_number} for {reservation.customer_name}? The trailer
+                goes back on the calendar for those dates and the customer is emailed. No no-show fee
+                is charged. The record is kept, marked cancelled — it is not deleted.
+                {reservation.deposit_hold_status === 'requires_capture' && (
+                  <> The deposit hold on their card is released first.</>
+                )}
+              </p>
+              <Label htmlFor="cancel-reason">Reason (optional — kept on the record)</Label>
+              <Input
+                id="cancel-reason"
+                value={cancelReason}
+                onChange={event => setCancelReason(event.target.value)}
+                placeholder="Customer called to cancel"
+              />
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => { setError(''); cancelRental.mutate() }}
+                  className="gap-2 border-destructive/40 bg-transparent text-destructive hover:bg-destructive/10"
+                >
+                  {cancelRental.isPending ? 'Cancelling…' : 'Confirm cancellation'}
+                </Button>
+                <Button variant="outline" onClick={() => setShowCancel(false)} className="bg-transparent">
+                  Back
+                </Button>
+              </div>
+            </div>
           )}
 
-          {status === 'confirmed' && !showNoShow && (
+          {['pending', 'confirmed'].includes(status) && !showDecline && !showNoShow && !showCancel && (
+            <>
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => { setError(''); setShowNoShow(true) }}
+                className="gap-2 bg-transparent"
+              >
+                <UserX className="h-4 w-4" /> No-show
+              </Button>
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => { setError(''); setShowCancel(true) }}
+                className="gap-2 border-destructive/40 bg-transparent text-destructive hover:bg-destructive/10"
+              >
+                <CircleSlash className="h-4 w-4" /> Cancel rental
+              </Button>
+            </>
+          )}
+
+          {status === 'confirmed' && !showNoShow && !showCancel && (
             <>
               <Button
                 variant={pickupDone ? 'outline' : 'default'}

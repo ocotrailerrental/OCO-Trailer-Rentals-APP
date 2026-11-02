@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { Outlet, createFileRoute, Link, useMatches } from '@tanstack/react-router'
 import { ArrowRight, CalendarDays, CalendarPlus, CircleAlert, MapPin, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -15,8 +15,29 @@ const CANCELLABLE = new Set(['pending', 'confirmed'])
 
 export const Route = createFileRoute('/app/reservations')({
   head: () => ({ meta: [{ title: 'My rentals · OCO Trailer Rentals' }] }),
-  component: ReservationsPage,
+  component: ReservationsRoute,
 })
+
+/**
+ * This route is BOTH the rentals list and the parent of a single reservation.
+ *
+ * In file-based routing, `/app/reservations` is the parent of
+ * `/app/reservations/$reservationId`, and a parent renders its own component.
+ * With only the list here and no <Outlet />, opening one reservation matched the
+ * child route — the tab title even changed to "Reservation details" — and then
+ * rendered the list straight back over it. Every customer who pressed "View
+ * details" landed where they started, which put the pickup address, the
+ * documents prompt and the detail page's own cancel out of reach entirely. The
+ * inline cancel on each card below was added while that was still broken; it
+ * stays, because cancelling from the list is genuinely quicker.
+ *
+ * So: if a child route matched, get out of its way. Otherwise show the list.
+ */
+function ReservationsRoute() {
+  const matches = useMatches()
+  const childMatched = matches.some(match => match.routeId === '/app/reservations/$reservationId')
+  return childMatched ? <Outlet /> : <ReservationsPage />
+}
 
 type TrailerLookup = { id: string; name: string; slug: string; image_url: string | null }
 type LocationLookup = { id: string; name: string; city: string }
